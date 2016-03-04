@@ -1,0 +1,19 @@
+{
+  "name": "frontend",
+  "version": "0.0.1",
+  "homepage": "https://github.com/CendraCM/frontend",
+  "authors": [
+    "Agustin Moyano <agustin.moyano@gmail.com>"
+  ],
+  "license": "GPL-3.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular-material": "~1.0.6"
+  }
+}

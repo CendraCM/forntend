@@ -1,0 +1,25 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CendraCM/frontend.git"
+  },
+  "author": "Agustin Moyano",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/CendraCM/frontend/issues"
+  },
+  "homepage": "https://github.com/CendraCM/frontend#readme",
+  "dependencies": {
+    "body-parser": "^1.15.0",
+    "express": "^4.13.4",
+    "express-session": "^1.13.0",
+    "request": "^2.69.0"
+  }
+}
