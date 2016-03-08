@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Cendra CM</title>
+
+    <!-- bower:css -->
+    <link rel="stylesheet" href="/bower_components/angular-material/angular-material.css" />
+    <link rel="stylesheet" href="/bower_components/ng-img-crop/compile/minified/ng-img-crop.css" />
+    <link rel="stylesheet" href="/bower_components/formlyMaterialTemplate/index.css" />
+    <!-- endbower -->
+
+    <!-- inject:css -->
+    <!-- endinject -->
+
+  </head>
+  <body ng-cloak ng-app="cendra">
+    <div layout="column" ng-controller="GeneralController">
+      <md-toolbar>
+        <div class="md-toolbar-tools">
+          <h2><a ui-sref="root">Cendra CM</a></div>
+        </div>
+      </md-toolbar>
+      <div layout="row" layout-fill>
+        <md-sidenav md-component-id="menu" class="md-sidenav-left md-whiteframe-z2" md-is-locked-open="true">
+          <md-content>
+            <md-list>
+              <md-list-item>
+                <md-button flex class="md-primary" ui-sref="new">
+                  Nuevo Documento
+                </md-button>
+              </md-list-item>
+            </md-list>
+          </md-content>
+
+        </md-sidenav>
+        <md-content ui-view></md-content>
+      </div>
+    </div>
+    <!-- bower:js -->
+    <script src="/bower_components/angular/angular.js"></script>
+    <script src="/bower_components/angular-animate/angular-animate.js"></script>
+    <script src="/bower_components/angular-aria/angular-aria.js"></script>
+    <script src="/bower_components/angular-messages/angular-messages.js"></script>
+    <script src="/bower_components/angular-material/angular-material.js"></script>
+    <script src="/bower_components/angular-ui-router/release/angular-ui-router.js"></script>
+    <script src="/bower_components/angular-resource/angular-resource.js"></script>
+    <script src="/bower_components/api-check/dist/api-check.js"></script>
+    <script src="/bower_components/ng-img-crop/compile/minified/ng-img-crop.js"></script>
+    <script src="/bower_components/webcam/dist/webcam.min.js"></script>
+    <script src="/bower_components/ng-file-upload/ng-file-upload.js"></script>
+    <script src="/bower_components/formlyMaterialTemplate/index.all.js"></script>
+    <!-- endbower -->
+
+    <!-- inject:js -->
+    <script src="scripts/app.js"></script>
+    <script src="scripts/app_config.js"></script>
+    <script src="scripts/app_general.js"></script>
+    <script src="scripts/app_router.js"></script>
+    <script src="scripts/app_service.js"></script>
+    <script src="scripts/controllers/main.controller.js"></script>
+    <script src="scripts/controllers/new.controller.js"></script>
+    <!-- endinject -->
+
+  </body>
+</html>
