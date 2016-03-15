@@ -1,5 +1,5 @@
 var gulp = require('gulp');
-var wiredep = require('wiredep').stream;
+var wiredep = require('gulp-wiredep');
 var browser = require('browser-sync').create();
 var inject = require('gulp-inject');
 var watch = require('gulp-watch');
@@ -24,7 +24,7 @@ gulp.task('inject', injectTask);
 
 gulp.task('bower', function bowerTask() {
   gulp.src('app/index.html')
-    .pipe(wiredep({ignorePath: '..'}))
+    .pipe(wiredep({ignorePath: '..', onError: function(err) { console.log(err)}, onPathInjected: function(path) {console.log(path)}}))
     .pipe(gulp.dest('app'));
 });
 
