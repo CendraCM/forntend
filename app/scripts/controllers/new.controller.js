@@ -11,6 +11,9 @@ angular.module('cendra')
       item: {
         type: 'string'
       },
+      itema: {
+        type: 'array',
+      },
       item2: {
         type: 'number'
       },
@@ -22,9 +25,12 @@ angular.module('cendra')
 
   vm.document = {
     item: 'algo',
+    itema: ['otro', 'array'],
     item2: 5,
-    item3: ['array', 'de', 'elementos']
+    item3: ['array', 'de', 'elementos', ['con', 'otro', 'array']]
   };
+
+  vm.mode = 'E';
 });
 
 })();
