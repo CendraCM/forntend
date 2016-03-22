@@ -5,8 +5,8 @@
     'ngMaterial',
     'ui.router',
     'ngResource',
-    'formly',
-    'formlyMaterialTemplate',
+    /*'formly',
+    'formlyMaterialTemplate',*/
     'cendra.builder'
   ]);
 })()

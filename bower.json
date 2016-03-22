@@ -16,8 +16,6 @@
   "dependencies": {
     "angular-material": "~1.0.6",
     "angular-ui-router": "ui-router#^0.2.18",
-    "angular-resource": "^1.5.0",
-    "formlyMaterialTemplate": "*",
-    "angular-formly": "https://npmcdn.com/angular-formly@^7.3.9/bower.zip#^7.5.2"
+    "angular-resource": "^1.5.0"
   }
 }
