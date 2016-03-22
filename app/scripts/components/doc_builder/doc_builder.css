@@ -1,3 +1,20 @@
 doc-builder md-menu-item {
-  height:auto
+  height:auto;
+  width: auto;
+}
+
+doc-builder md-menu-item > * {
+  width: auto;
+}
+
+doc-builder {
+  flex-direction: column;
+}
+
+doc-builder.root > md-list {
+  overflow: auto;
+}
+
+.schema-type {
+  min-width: 150px;
 }
