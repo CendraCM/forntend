@@ -22,8 +22,19 @@ app.use(parser.urlencoded({extended: true}));
 app.use(express.static(path.join(__dirname, 'app')));
 app.use('/bower_components', express.static(path.join(__dirname, 'bower_components')));
 
+app.use(function(req, res, next) {
+  console.log(req.method+' '+req.originalUrl+' %j', req.body);
+  next();
+});
+
 app.use('/backend', function(req, res, next) {
-  req.pipe(request(config.backend)).pipe(res);
+  request({method: req.method, url: config.backend, form: req.body}, function(error, response, body) {
+    res.set(response.headers)
+    res.status(response.statusCode).send(body);
+  })
+  /*req.pipe(request(config.backend).on('error', function(error){
+    console.log('Error: '+error);
+  })).pipe(res);*/
 });
 
 app.listen(config.port);

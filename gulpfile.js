@@ -9,14 +9,14 @@ var nodemon = require('gulp-nodemon');
 
 var reload = browser.reload;
 
-gulp.task('default', ['tmp', 'bower', 'tmp', 'inject']);
+gulp.task('default', ['bower', 'inject']);
 
-gulp.task('tmp', function tempTask() {
-  gulp.src('./app/index.html').pipe(gulp.dest('.tmp/'));
-});
+function temp() {
+  return gulp.src('./app/index.html').pipe(gulp.dest('.tmp/'));
+}
 
 function injectTask() {
-  var target = gulp.src('.tmp/index.html');
+  var target = temp();
   // It's not necessary to read the files (will speed up things), we're only after their paths:
   var sources = gulp.src(['./app/**/*.js', './app/**/*.css'], {read: false});
 
@@ -27,7 +27,7 @@ function injectTask() {
 gulp.task('inject', injectTask);
 
 gulp.task('bower', function bowerTask() {
-  gulp.src('.tmp/index.html')
+  temp()
     .pipe(wiredep({ignorePath: '..', onError: function(err) { console.log(err)}, onPathInjected: function(path) {console.log(path)}}))
     .pipe(gulp.dest('app'));
 });
@@ -65,7 +65,7 @@ gulp.task('nodemon', function (cb) {
     });
 });
 
-gulp.task('serve', ['tmp', 'bower', 'tmp', 'inject', 'nodemon'], function serveTask() {
+gulp.task('serve', ['bower', 'inject', 'nodemon'], function serveTask() {
   browser.init({
     proxy: 'http://localhost:'+config.port
   });

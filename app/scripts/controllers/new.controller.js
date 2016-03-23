@@ -2,7 +2,7 @@
 'use strict';
 
 angular.module('cendra')
-.controller('NewController', function($scope) {
+.controller('NewController', function($scope, backend, $state) {
   var vm = this;
   vm.schema = {
     title: 'New Document',
@@ -22,6 +22,11 @@ angular.module('cendra')
       }
     }
   };
+
+  vm.done = function(canceled) {
+    if(!canceled) backend.save(vm.document);
+    $state.go('root');
+  }
 
 /*  vm.document = {
     item: 'algo',
