@@ -59,6 +59,13 @@
         '<md-button type="submit">'+
           'Agregar Item'+
         '</md-button>'+
+        '<md-button ng-click="clear()">'+
+          'Vaciar Conjunto'+
+        '</md-button>'+
+        '<span flex></span>'+
+        '<md-button ng-if="!selected.root" class="md-icon-button" ng-click="delete()">'+
+          '<md-icon md-font-set="material-icons">delete</md-icon>'+
+        '</md-button>'+
       '</div>'+
       '<div layout="row" ng-switch-when="object" md-whiteframe="2" layout-padding>'+
         '<md-input-container class="schema-type" ng-if="!selected.root">'+
@@ -73,6 +80,13 @@
         '</md-input-container>'+
         '<md-button type="submit">'+
           'Agregar'+
+        '</md-button>'+
+        '<md-button ng-click="clear()">'+
+          'Vaciar Formulario'+
+        '</md-button>'+
+        '<span flex></span>'+
+        '<md-button  ng-if="!selected.root" class="md-icon-button" ng-click="delete()">'+
+          '<md-icon md-font-set="material-icons">delete</md-icon>'+
         '</md-button>'+
       '</div>'+
       '<div layout="row" ng-switch-default md-whiteframe="2" layout-padding>'+
@@ -89,6 +103,10 @@
         '<md-checkbox ng-model="selected.parent[selected.key]" layout="row" layout-align="center center" ng-if="selected.schema.type==\'boolean\'">'+
           '<div layout-fill>{{selected.key}}</div>'+
         '</md-checkbox>'+
+        '<span flex></span>'+
+        '<md-button ng-if="!selected.root" class="md-icon-button" ng-click="delete()">'+
+          '<md-icon md-font-set="material-icons">delete</md-icon>'+
+        '</md-button>'+
       '</div>'+
     '</form>';
 
@@ -240,6 +258,28 @@
           }
 
         };
+        $scope.clear = function() {
+          var element = $scope.selected.root||$scope.selected.parent[$scope.selected.key];
+          if(getType(element)=='array') {
+            element = [];
+          } else {
+            var keep = {};
+            angular.forEach(element, function(value, key) {
+              if(key.substr(0,3)=='obj') keep[key] = value;
+            })
+            element = keep;
+          }
+        };
+
+        $scope.delete = function() {
+          if(getType($scope.selected.parent)=='array') {
+            $scope.selected.parent.splice($scope.selected.key,1);
+          } else {
+            delete $scope.selected.parent[$scope.selected.key];
+          }
+          $scope.$emit('docBuilder:rootSelect', {parent: null, key: null, schema: null});
+        }
+
         $scope.doAction = function() {
           var element = $scope.selected.root||$scope.selected.parent[$scope.selected.key];
           switch($scope.selected.schema.type) {
@@ -260,9 +300,21 @@
               delete $scope.selected.new;
               break;
             default:
-              if(angular.isNumber($scope.selected.key) && angular.isDefined($scope.selected.parent[$scope.selected.key+1])) {
+              if(getType($scope.selected.parent)=='array' && angular.isDefined($scope.selected.parent[$scope.selected.key+1])) {
                 $scope.selected.key+=1;
                 //$scope.$emit('docBuilder:rootSelect', $scope.selected);
+              }
+              if(getType($scope.selected.parent)=='object') {
+                var next = false;
+                angular.forEach($scope.selected.parent, function(value, key) {
+                  if(next=='done') return;
+                  if(next) {
+                    $scope.selected.key=key;
+                    next='done';
+                  } else if(key == $scope.selected.key) {
+                    next=true;
+                  }
+                });
               }
           }
         }
