@@ -2,14 +2,14 @@
   'use strict';
 
   var template=
-    '<form ng-if="!isChild" md-whiteframe="2" layout-padding>'+
+    '<form name="mainForm" ng-if="!isChild" md-whiteframe="2" layout-padding>'+
       '<div layout="row">'+
         '<md-input-container>'+
           '<label>Titulo Documento</label>'+
-          '<input ng-model="ngModel.objName" required/>'+
+          '<input ng-model="ngModel.objName" name="documentName" required/>'+
         '</md-input-container>'+
         '<span flex></span>'+
-        '<md-button class="md-icon-button" ng-click="done({canceled: false})">'+
+        '<md-button class="md-icon-button" ng-click="doSave(mainForm)">'+
           '<md-icon md-font-set="material-icons">save</md-icon>'+
         '</md-button>'+
         '<md-button class="md-icon-button" ng-click="doCancel()">'+
@@ -110,6 +110,21 @@
       '</div>'+
     '</form>';
 
+  var isEmpty = function(element) {
+    var type = getType(element);
+    if(type=='array') {
+      return !element.length;
+    }
+    if(type=='object') {
+      for(var i in element) {
+        if(i.substr(0,3)=='obj') continue;
+        return false;
+      }
+      return true;
+    }
+    return angular.isUndefined(element)||element==null;
+  }
+
   var buildSchema = function(element) {
     if(angular.isUndefined(element)) return;
     var schema = {};
@@ -209,7 +224,7 @@
         edit: '<?',
         done: '&'
       },
-      controller: function($scope, $mdBottomSheet) {
+      controller: function($scope, $mdToast) {
         $scope.isChild = $scope.edit=='child';
         $scope.edit=$scope.isChild?false:$scope.edit;
         if(!$scope.isChild) {
@@ -238,6 +253,17 @@
         }
         $scope.getType = getType;
         $scope.selected = {parent: null, key: null, schema: null};
+        $scope.doSave = function(mainForm) {
+          mainForm.documentName.$setDirty();
+          mainForm.documentName.$setTouched();
+          if(isEmpty($scope.ngModel.objName)) {
+            return $mdToast.showSimple('Debe Proporcionar un Nombre para el Documento.');
+          }
+          if(isEmpty($scope.ngModel)) {
+            return $mdToast.showSimple('El documento no puede estar vacío.');
+          }
+          $scope.done({canceled: false});
+        };
         $scope.doCancel = function() {
           $scope.ngModel = modelCopy;
           $scope.done({canceled: true});
@@ -260,14 +286,13 @@
         };
         $scope.clear = function() {
           var element = $scope.selected.root||$scope.selected.parent[$scope.selected.key];
-          if(getType(element)=='array') {
-            element = [];
+          var type = getType(element);
+          if(type=="array") {
+            element.splice(0,element.length);
           } else {
-            var keep = {};
             angular.forEach(element, function(value, key) {
-              if(key.substr(0,3)=='obj') keep[key] = value;
-            })
-            element = keep;
+              if(key.substr(0,3)!='obj') delete element[key];
+            });
           }
         };
 
