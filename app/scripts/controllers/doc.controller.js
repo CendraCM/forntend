@@ -2,9 +2,9 @@
 'use strict';
 
 angular.module('cendra')
-.controller('DocController', function($scope, backend, $state, $stateParams) {
+.controller('DocController', function($scope, document, schema, $state, $stateParams) {
   var vm = this;
-  vm.schema = {
+  /*vm.schema = {
     title: 'New Document',
     type: 'object',
     properties: {
@@ -21,7 +21,7 @@ angular.module('cendra')
         type: 'array'
       }
     }
-  };
+  };*/
 
   vm.done = function(canceled) {
     if(!canceled) backend.save(vm.document);

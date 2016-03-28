@@ -2,9 +2,9 @@
 'use strict';
 
 angular.module('cendra')
-.controller('MainController', ['backend', '$state', function(backend, $state) {
+.controller('MainController', ['backend', '$state', function(document, $state) {
   var vm = this;
-  vm.documents = backend.query()||[];
+  vm.documents = document.query()||[];
   vm.select = function(id) {
     $state.go('document', {id: id});
   }
