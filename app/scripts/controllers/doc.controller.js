@@ -2,7 +2,7 @@
 'use strict';
 
 angular.module('cendra')
-.controller('NewController', function($scope, backend, $state) {
+.controller('DocController', function($scope, backend, $state, $stateParams) {
   var vm = this;
   vm.schema = {
     title: 'New Document',

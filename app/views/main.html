@@ -1,4 +1,4 @@
 <div layout="row" layout-wrap layout-margin layout-padding>
   <div ng-if="!vm.documents.length">No se han encontrado elementos</div>
-  <div ng-repeat="document in vm.documents" flex="20">{{document.objName}}</div>
+  <div ng-repeat="document in vm.documents" flex="20" ng-click="vm.select(document._id)">{{document.objName}}</div>
 </div>

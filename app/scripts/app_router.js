@@ -10,10 +10,10 @@
       controller: 'MainController',
       controllerAs: 'vm'
     })
-    .state('new', {
-      url: '/new',
-      templateUrl: 'views/new.html',
-      controller: 'NewController',
+    .state('document', {
+      url: '/document/:id',
+      templateUrl: 'views/doc.html',
+      controller: 'DocController',
       controllerAs: 'vm'
     });
 

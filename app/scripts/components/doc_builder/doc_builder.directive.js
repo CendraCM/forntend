@@ -48,11 +48,11 @@
         '</md-menu-item>'+
       '</div  >'+
     '</md-list>'+
-    '<form ng-submit="doAction()" ng-if="edit && edit!=\'child\' && (selected.parent||selected.root)" ng-switch="selected.schema.type">'+
+    '<form ng-submit="doAction()" ng-if="edit && edit!=\'child\' && (selected.parent||selected.root)" ng-switch="getSelectedSchema().type">'+
       '<div layout="row" ng-switch-when="array" md-whiteframe="2" layout-padding>'+
         '<md-input-container class="schema-type" ng-if="!selected.root">'+
           '<label>Tipo Elemento</label>'+
-          '<md-select ng-model="selected.schema.type" ng-change="typeChange()">'+
+          '<md-select ng-model="getSelectedSchema().type" ng-change="typeChange()">'+
             '<md-option ng-repeat="(key, val) in types" ng-value="key">{{val}}</md-option>'+
           '</md-select>'+
         '</md-input-container>'+
@@ -70,7 +70,7 @@
       '<div layout="row" ng-switch-when="object" md-whiteframe="2" layout-padding>'+
         '<md-input-container class="schema-type" ng-if="!selected.root">'+
           '<label>Tipo Elemento</label>'+
-          '<md-select ng-model="selected.schema.type"  ng-change="typeChange()">'+
+          '<md-select ng-model="getSelectedSchema().type"  ng-change="typeChange()">'+
             '<md-option ng-repeat="(key, val) in types" ng-value="key">{{val}}</md-option>'+
           '</md-select>'+
         '</md-input-container>'+
@@ -92,15 +92,15 @@
       '<div layout="row" ng-switch-default md-whiteframe="2" layout-padding>'+
         '<md-input-container class="schema-type" ng-if="!selected.root">'+
           '<label>Tipo Elemento</label>'+
-          '<md-select ng-model="selected.schema.type"  ng-change="typeChange()">'+
+          '<md-select ng-model="getSelectedSchema().type"  ng-change="typeChange()">'+
             '<md-option ng-repeat="(key, val) in types" ng-value="key">{{val}}</md-option>'+
           '</md-select>'+
         '</md-input-container>'+
-        '<md-input-container ng-if="selected.schema.type!=\'boolean\'">'+
+        '<md-input-container ng-if="getSelectedSchema().type!=\'boolean\'">'+
           '<label>Valor</label>'+
-          '<input ng-model="selected.parent[selected.key]" type="{{selected.schema.format==\'date-time\'?\'datetime\':selected.schema.type}}"/>'+
+          '<input ng-model="selected.parent[selected.key]" type="{{getSelectedSchema().format==\'date-time\'?\'datetime\':getSelectedSchema().type}}"/>'+
         '</md-input-container>'+
-        '<md-checkbox ng-model="selected.parent[selected.key]" layout="row" layout-align="center center" ng-if="selected.schema.type==\'boolean\'">'+
+        '<md-checkbox ng-model="selected.parent[selected.key]" layout="row" layout-align="center center" ng-if="getSelectedSchema().type==\'boolean\'">'+
           '<div layout-fill>{{selected.key}}</div>'+
         '</md-checkbox>'+
         '<span flex></span>'+
@@ -307,21 +307,22 @@
 
         $scope.doAction = function() {
           var element = $scope.selected.root||$scope.selected.parent[$scope.selected.key];
-          switch($scope.selected.schema.type) {
+          var schema = $scope.getSelectedSchema();
+          switch(schema.type) {
             case 'array':
-              if(getType($scope.selected.schema.items)!='object') {
+              if(getType(schema.items)!='object') {
                 var index = element.push(null) - 1;
-                !$scope.selected.schema.items && ($scope.selected.schema.items=[]);
-                $scope.selected.schema.items[index]={type: 'string'};
+                !schema.items && (schema.items=[]);
+                schema.items[index]={type: 'string'};
               } else {
-                var document = buildDocument($scope.selected.schema.items);
+                var document = buildDocument(schema.items);
                 element.push(document);
               }
               break;
             case 'object':
               element[$scope.selected.new] = null;
-              !$scope.selected.schema.properties && ($scope.selected.schema.properties={});
-              $scope.selected.schema.properties[$scope.selected.new]={type: 'string'};
+              !schema.properties && (schema.properties={});
+              schema.properties[$scope.selected.new]={type: 'string'};
               delete $scope.selected.new;
               break;
             default:
@@ -343,20 +344,28 @@
               }
           }
         }
-        $scope.select = function(key) {
-          var schema=null;
+
+        $scope.getSelectedSchema = function() {
+          if($scope.selected.root) {
+            return $scope.schema;
+          }
+          var schema;
           switch($scope.schema.type) {
             case "array":
               var type = getType($scope.schema.items);
-              schema = type=='array'?$scope.schema.items[key]:$scope.schema.items;
+              schema = type=='array'?$scope.schema.items[$scope.selected.key]:$scope.schema.items;
               break;
             case "object":
-              schema = $scope.schema.properties[key];
+              schema = $scope.schema.properties[$scope.selected.key];
           }
-          if(!schema) {
-            schema = {type: getType($scope.ngModel[key])};
+          return schema;
+        }
+
+        $scope.select = function(key) {
+          if(!$scope.schema) {
+            $scope.schema = {type: getType($scope.ngModel[key])};
           }
-          var element = {parent: $scope.ngModel, key: key, schema: schema};
+          var element = {parent: $scope.ngModel, key: key, schema: $scope.schema};
           if($scope.selected.parent == element.parent && $scope.selected.key == element.key) {
             element = {parent: null, key: null, schema: null};
           }
