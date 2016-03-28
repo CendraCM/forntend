@@ -269,10 +269,12 @@
           $scope.done({canceled: true});
         };
         $scope.typeChange = function(){
-          if($scope.selected.schema.type == $scope.phantom.schema.type) {
+          var schema = $scope.getSelectedSchema();
+          var pschema = $scope.getSelectedSchema(true);
+          if(schema.type == pschema.type) {
             return $scope.selected.parent[$scope.selected.key] = $scope.phantom.value;
           }
-          switch($scope.selected.schema.type) {
+          switch(schema.type) {
             case "object":
               $scope.selected.parent[$scope.selected.key] = {};
               break;
@@ -345,18 +347,19 @@
           }
         }
 
-        $scope.getSelectedSchema = function() {
-          if($scope.selected.root) {
+        $scope.getSelectedSchema = function(phantom) {
+          var obj = phantom?$scope.phantom:$scope.selected;
+          if(obj.root) {
             return $scope.schema;
           }
           var schema;
-          switch($scope.schema.type) {
+          switch(obj.schema.type) {
             case "array":
-              var type = getType($scope.schema.items);
-              schema = type=='array'?$scope.schema.items[$scope.selected.key]:$scope.schema.items;
+              var type = getType(obj.schema.items);
+              schema = type=='array'?obj.schema.items[$scope.selected.key]:obj.schema.items;
               break;
             case "object":
-              schema = $scope.schema.properties[$scope.selected.key];
+              schema = obj.schema.properties[obj.key];
           }
           return schema;
         }
@@ -378,7 +381,7 @@
           $scope.$on('docBuilder:rootSelect', function($event, element) {
             if(!element.parent) {
               element = {schema: $scope.schema, root: $scope.ngModel};
-              $scope.phantom = $scope.ngModel;
+              $scope.phantom = angular.merge({}, {schema: element.schema, value: $scope.ngModel});
             } else {
               $scope.phantom = angular.merge({}, {schema: element.schema, value: element.parent[element.key]});
             }
