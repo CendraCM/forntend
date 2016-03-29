@@ -4,6 +4,13 @@
 angular.module('cendra')
 .controller('DocController', function($scope, document, schema, $state, $stateParams) {
   var vm = this;
+  if($stateParams.id) {
+    document.get($stateParams).$promise.then(function(doc) {
+      delete doc.$promise;
+      delete doc.$resolved;
+      vm.document = doc;
+    });
+  }
   /*vm.schema = {
     title: 'New Document',
     type: 'object',
@@ -24,7 +31,11 @@ angular.module('cendra')
   };*/
 
   vm.done = function(canceled) {
-    if(!canceled) backend.save(vm.document);
+    if(!canceled) {
+      if(vm.document._id) document.update(vm.document);
+      else document.save(vm.document);
+
+    }
     $state.go('root');
   }
 

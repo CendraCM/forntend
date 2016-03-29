@@ -28,7 +28,7 @@ app.use(function(req, res, next) {
 });
 
 app.use('/backend', function(req, res, next) {
-  request({method: req.method, url: config.backend, form: req.body}, function(error, response, body) {
+  request({method: req.method, url: config.backend+req.url, form: req.body}, function(error, response, body) {
     res.set(response.headers)
     res.status(response.statusCode).send(body);
   })
