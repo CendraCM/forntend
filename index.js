@@ -3,18 +3,19 @@ var app = express();
 var parser = require('body-parser');
 var session = require('express-session');
 var request = require('request');
-var config = require('/etc/nodejs-config/cendraCM').frontend;
+var config = require('/etc/service-config/service');
 var path = require('path');
+var fs = require('fs');
+
+try {
+  fs.unlinkSync('/run/service/service.sock');
+}catch(e) {
+
+}
 
 app.get('/test', function(req, res, next) {
   res.send('Ok');
 });
-
-/*
-app.use(function(req, res, next){
-  console.log(req.method+' '+req.originalUrl);
-  next();
-})*/
 
 app.use(session({resave: false, saveUninitialized: false, secret: 'fasñdlfkj2i34u21834udf8u]!!'}));
 app.use(parser.json());
@@ -37,4 +38,4 @@ app.use('/backend', function(req, res, next) {
   })).pipe(res);*/
 });
 
-app.listen(config.port);
+app.listen("/run/service/service.sock");

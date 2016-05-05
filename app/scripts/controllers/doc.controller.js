@@ -11,6 +11,70 @@ angular.module('cendra')
       vm.document = doc;
     });
   }
+
+  vm.schema = {
+    "objName": "ENotaClass",
+    "objTitle": {
+      "en_US": "Note",
+      "es_AR": "Nota"
+    },
+    "objDescription": {
+      "en_US": "Note",
+      "es_AR": "Nota"
+    },
+    "type": "object",
+    "properties": {
+      "objName": {
+        "type": "string"
+      },
+      "objTitle": {
+        "type": "string"
+      },
+      "objDescription": {
+        "type": "string",
+        "default": "Nota"
+      },
+      "objImplements": {
+        "type": "string"
+      },
+      "objTags": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "default": "Nota"
+        }
+      },
+      "city": {
+        "type": "string"
+      },
+      "reference": {
+        "type": "string"
+      },
+      "body": {
+        "type": "string"
+      },
+      "created": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "adminUnit": {
+        "type": "string"
+      },
+      "user": {
+        "type": "string"
+      },
+      "pdf": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "objName",
+      "city",
+      "body"
+    ],
+    "_id": "56fc34da09a98486535f030f"
+  };
+
   /*vm.schema = {
     title: 'New Document',
     type: 'object',

@@ -3,13 +3,19 @@ var wiredep = require('gulp-wiredep');
 var browser = require('browser-sync').create();
 var inject = require('gulp-inject');
 var watch = require('gulp-watch');
-var request = require('request');
-var config = require('/etc/nodejs-config/cendraCM').frontend;
+var config = require('/etc/nodejs-config/cendra');
 var nodemon = require('gulp-nodemon');
+var Docker = require('dockerode');
+var gulp_conf = require('./gulp.conf');
+var docker = new Docker(gulp_conf.docker);
+var package = require('./package');
+var tar = require('gulp-tar');
+var gitignore = require('gulp-gitignore');
+var vfs = require('vinyl-fs');
 
 var reload = browser.reload;
 
-gulp.task('default', ['bower', 'inject']);
+gulp.task('default', ['docker']);
 
 function temp() {
   return gulp.src('./app/index.html').pipe(gulp.dest('.tmp/'));
@@ -23,6 +29,47 @@ function injectTask() {
   return target.pipe(inject(sources, {relative: true, ignorePath: '../app'}))
     .pipe(gulp.dest('./app'));
 }
+
+gulp.task('tar', ['bower', 'inject'], function() {
+  return vfs.src('**/*', {base: '.'}).pipe(gitignore()).pipe(tar(package.name+'.tar')).pipe(gulp.dest('/tmp/'));
+});
+
+gulp.task('docker:build', ['tar'], function dockerBuildTask(done) {
+  docker.buildImage('/tmp/'+package.name+'.tar', {
+    t: package.name+':'+package.version
+  }, function(error, stream) {
+    stream.pipe(process.stdout);
+    stream.on('end', done);
+  });
+});
+
+gulp.task('docker', ['docker:build'], function dockerCreateTask(done) {
+  var container = docker.getContainer(package.name);
+  container.remove({force: true}, function(err, data) {
+    docker.createContainer({
+      Image: package.name+':'+package.version,
+      name: package.name,
+      Volumes: {
+        '/run/service': {},
+        '/etc/service-config/service.json': {}
+      },
+      HostConfig: {
+        Binds: [
+          '/run/services/'+package.name+':/run/service',
+          '/etc/nodejs-config/'+package.name+'.json:/etc/service-config/service.json'
+        ]
+      }
+    }, function(error, container) {
+      console.log(error);
+      console.log(container);
+      container.start(function(error, data) {
+        console.log(error);
+        console.log(data);
+        done();
+      });
+    })
+  })
+});
 
 gulp.task('inject', injectTask);
 
@@ -65,9 +112,15 @@ gulp.task('nodemon', function (cb) {
     });
 });
 
-gulp.task('serve', ['bower', 'inject', 'nodemon'], function serveTask() {
+gulp.task('serve', ['docker', 'nodemon'], function serveTask() {
   browser.init({
-    proxy: 'http://localhost:'+config.port
+    proxy: 'http://localhost',
+    proxyReq: [
+        function (proxyReq) {
+            console.log('algo');
+            proxyReq.setHeader('Host', package.name);
+        }
+    ]
   });
   gulp.watch(['styles/**/*.scss'], ['sass']);
   watch(['./app/**/*.js', './app/**/*.css'], {events: ['add']}, injectTask);
