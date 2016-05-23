@@ -5,11 +5,14 @@ RUN npm install -g bower
 RUN mkdir -p /opt/project
 WORKDIR /opt/project
 
-COPY Dockerfile /opt/project/
 COPY package.json /opt/project/
 RUN npm install
 COPY bower.json /opt/project/
 RUN bower install --allow-root
 COPY index.js /opt/project
 COPY app /opt/project/app
+COPY Dockerfile /opt/project/
+COPY entrypoint.sh /opt/project/
+ENTRYPOINT ["/opt/project/entrypoint.sh"]
+EXPOSE 80
 CMD ["npm", "start"]

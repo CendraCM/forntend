@@ -6,12 +6,8 @@ var request = require('request');
 var config = require('/etc/service-config/service');
 var path = require('path');
 var fs = require('fs');
+var extend = require('extend');
 
-try {
-  fs.unlinkSync('/run/service/service.sock');
-}catch(e) {
-
-}
 
 app.get('/test', function(req, res, next) {
   res.send('Ok');
@@ -29,7 +25,20 @@ app.use(function(req, res, next) {
 });
 
 app.use('/backend', function(req, res, next) {
-  request({method: req.method, url: config.backend+req.url, form: req.body}, function(error, response, body) {
+  console.log('%j', config);
+  var headers = extend({}, req.headers);
+  delete headers.host;
+  var options = {
+    url: config.backend+req.url,
+    method: req.method,
+    headers: headers
+  };
+  if(["POST", "PUT", "PATCH"].indexOf(req.method) !== -1) {
+    options.json = req.body||'';
+  }
+  console.log('%j', options);
+  request(options, function(error, response, body) {
+    if(error) return res.status(500).send(error);
     res.set(response.headers)
     res.status(response.statusCode).send(body);
   })
@@ -38,4 +47,4 @@ app.use('/backend', function(req, res, next) {
   })).pipe(res);*/
 });
 
-app.listen("/run/service/service.sock");
+app.listen(80);
