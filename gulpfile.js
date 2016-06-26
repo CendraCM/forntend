@@ -48,8 +48,8 @@ function dockerCreateTask(done) {
         console.log(data);
         done();
       });
-    })
-  })
+    });
+  });
 }
 
 function dockerDebugTask(done) {
@@ -81,8 +81,8 @@ function dockerDebugTask(done) {
           done && done();
         });
       });
-    })
-  })
+    });
+  });
 }
 
 var BROWSER_SYNC_RELOAD_DELAY = 500;
@@ -112,22 +112,22 @@ function serveTask() {
 
 function serveInspectorTask() {
 
-  var portrange = 45032
+  var portrange = 45032;
 
   function getPort (cb) {
-    var port = portrange
-    portrange += 1
+    var port = portrange;
+    portrange += 1;
 
-    var server = net.createServer()
+    var server = net.createServer();
     server.listen(port, function (err) {
       server.once('close', function () {
-        cb(port)
-      })
-      server.close()
-    })
+        cb(port);
+      });
+      server.close();
+    });
     server.on('error', function (err) {
-      getPort(cb)
-    })
+      getPort(cb);
+    });
   }
 
   getPort(function(port) {
@@ -167,7 +167,7 @@ gulp.task('inject', injectTask);
 
 gulp.task('bower', function bowerTask() {
   temp()
-    .pipe(wiredep({ignorePath: '..', onError: function(err) { console.log(err)}}))
+    .pipe(wiredep({ignorePath: '..', onError: function(err) { console.log(err); }}))
     .pipe(gulp.dest('app'));
 });
 
