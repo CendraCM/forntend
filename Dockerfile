@@ -9,7 +9,7 @@ COPY package.json /opt/project/
 RUN npm install
 COPY bower.json /opt/project/
 RUN bower install --allow-root
-COPY index.js /opt/project
+COPY index.js /opt/project/
 COPY app /opt/project/app
 COPY Dockerfile /opt/project/
 COPY entrypoint.sh /opt/project/

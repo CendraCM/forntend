@@ -3,6 +3,7 @@
 
   angular.module('cendra', [
     'ngMaterial',
+    'ngAnimate',
     'ui.router',
     'ngResource',
     /*'formly',
