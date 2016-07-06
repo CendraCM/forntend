@@ -1,4 +1,4 @@
-FROM hub.psi.unc.edu.ar/base/nodejs:5.11.0
+FROM hub.psi.unc.edu.ar/base/nodejs:6.2.2
 
 RUN apt-get update && apt-get install -y git
 RUN npm install -g bower
