@@ -97,6 +97,10 @@ function serveTask() {
               proxyReq.setHeader('Host', package.name+'.unc.edu.ar');
           }
       ]
+    },
+    logLevel: 'debug',
+    errHandler: function(error) {
+      console.log(error);
     }
   });
   gulp.watch(['index.js'], ['docker:create']);

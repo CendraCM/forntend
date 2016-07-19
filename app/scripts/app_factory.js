@@ -13,6 +13,13 @@
       update: {method: 'PUT'},
       replace: {method: 'PUT', url: '/backend/schema/:id/replace'}
     });
+  }])
+  .factory('io', ['$location', '$mdToast', function($location, $mdToast) {
+    var socket = io();//io('/', {transports: ['websocket']});
+    socket.on('error:auth', function(msg) {
+      $mdToast.showSimple(msg);
+      $location.url('/login');
+    });
+    return socket;
   }]);
-
-})()
+})();

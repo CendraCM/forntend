@@ -1,6 +1,6 @@
 FROM hub.psi.unc.edu.ar/base/nodejs:6.2.2
 
-RUN apt-get update && apt-get install -y git
+RUN apt-get update && apt-get install -y git python
 RUN npm install -g bower
 RUN mkdir -p /opt/project
 WORKDIR /opt/project
