@@ -2,12 +2,15 @@
 'use strict';
 
 angular.module('cendra')
-.controller('MainController', ['document', '$state', function(document, $state) {
+.controller('MainController', ['io', '$state', function(io, $state) {
   var vm = this;
-  vm.documents = document.query()||[];
+  vm.documents = [];
+  io.emit('list:document', function(err, documents) {
+    vm.documents = documents;
+  });
   vm.select = function(id) {
     $state.go('document', {id: id});
-  }
+  };
 }]);
 
 })();

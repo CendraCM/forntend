@@ -31,7 +31,7 @@ app.use(function(req, res, next) {
   console.log(req.method+' '+req.originalUrl+' %j', req.body);
   next();
 });
-var bkreq = request.defaults({baseUrl: config.backend});
+var defaultRequest = request.defaults({baseUrl: config.backend});
 app.use('/backend', function(req, res, next) {
   console.log('%j', config);
   var headers = extend({}, req.headers);
@@ -45,7 +45,7 @@ app.use('/backend', function(req, res, next) {
     options.json = req.body||'';
   }
   console.log('%j', options);
-  bkreq(options, function(error, response, body) {
+  defaultRequest(options, function(error, response, body) {
     if(error) return res.status(500).send(error);
     res.set(response.headers);
     res.status(response.statusCode).send(body);
@@ -74,7 +74,7 @@ io.on('connection', function(socket) {
         },
         method: 'GET'
       };
-      bkreq(options, function(error, response, body){
+      defaultRequest(options, function(error, response, body){
         if(error) return reject(error);
         if(response.statusCode !== 200) return reject(body);
         try {
@@ -94,7 +94,7 @@ io.on('connection', function(socket) {
           },
           method: 'GET'
         };
-        bkreq(options, function(error, response, body){
+        defaultRequest(options, function(error, response, body){
           if(error) return reject(error);
           if(response.statusCode !== 200) return reject(body);
           try {
@@ -130,17 +130,11 @@ io.on('connection', function(socket) {
 
   isLoggedIn();
 
-  socket.on('insert:document', function(doc, cb) {
-    if(!isLoggedIn()) return socket.emit('error:unauth', 'Unauthorized Access');
-    new Promise(function(resolve, reject) {
-      var options = {
-        url: '/',
-        json: doc,
-        method: 'POST'
-      };
-      bkreq(options, function(error, response, body){
+  var bkRequest = function(options, cb) {
+    return new Promise(function(resolve, reject) {
+      defaultRequest(options, function(error, response, body){
         if(error) return reject(error);
-        if(response.statusCode !== 200) return reject(body);
+        if(response.statusCode >= 400) return reject(body);
         try {
           resolve(body);
         } catch(e) {
@@ -149,47 +143,74 @@ io.on('connection', function(socket) {
       });
     })
     .nodeify(cb);
+  };
+
+  socket.on('insert:document', function(doc, cb) {
+    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    var options = {
+      url: '/',
+      json: doc,
+      method: 'POST'
+    };
+    bkRequest(options, cb);
   });
 
   socket.on('update:document', function(id, doc, cb) {
-    if(!isLoggedIn()) return socket.emit('error:unauth', 'Unauthorized Access');
-    new Promise(function(resolve, reject) {
-      var options = {
-        url: '/'+id,
-        json: doc,
-        method: 'PUT'
-      };
-      bkreq(options, function(error, response, body){
-        if(error) return reject(error);
-        if(response.statusCode !== 200) return reject(body);
-        try {
-          resolve(body);
-        } catch(e) {
-          reject(e);
-        }
-      });
-    })
-    .nodeify(cb);
+    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    var options = {
+      url: '/'+id,
+      json: doc,
+      method: 'PUT'
+    };
+    bkRequest(options, cb);
   });
 
   socket.on('delete:document', function(id, cb) {
-    if(!isLoggedIn()) return socket.emit('error:unauth', 'Unauthorized Access');
-    new Promise(function(resolve, reject) {
-      var options = {
-        url: '/'+id,
-        method: 'DELETE'
-      };
-      bkreq(options, function(error, response, body){
-        if(error) return reject(error);
-        if(response.statusCode !== 204) return reject(body);
-        try {
-          resolve();
-        } catch(e) {
-          reject(e);
-        }
-      });
-    })
-    .nodeify(cb);
+    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    var options = {
+      url: '/'+id,
+      method: 'DELETE'
+    };
+    bkRequest(options, cb);
+  });
+
+  socket.on('list:document', function(filter, cb) {
+    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    var options = {
+      url: '/',
+      qs: filter,
+      method: 'GET'
+    };
+    bkRequest(options, cb);
+  });
+
+  socket.on('get:document', function(id, cb) {
+    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    var options = {
+      url: '/'+id,
+      method: 'GET'
+    };
+    bkRequest(options, cb);
+  });
+
+  socket.on('list:schema', function(filter, cb) {
+    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    var options = {
+      url: '/schema',
+      qs: filter,
+      method: 'GET'
+    };
+    bkRequest(options, cb);
+  });
+
+  socket.on('insert:schema', function(sch, cb) {
+    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    var options = {
+      url: '/schema',
+      json: sch,
+      method: 'POST'
+    };
+    bkRequest(options, cb);
   });
 
 });
