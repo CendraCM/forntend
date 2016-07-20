@@ -31,6 +31,9 @@
                   Nuevo Documento
                 </md-button>
               </md-list-item>
+              <md-list-item ng-repeat="folder in folders">
+                <md-icon>folder</md-icon> {{folder.objName}} 
+              </md-list-item>
             </md-list>
           </md-content>
 
