@@ -10,4 +10,4 @@
     'formlyMaterialTemplate',*/
     'cendra.builder'
   ]);
-})()
+})();

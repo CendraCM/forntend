@@ -203,6 +203,15 @@ io.on('connection', function(socket) {
     bkRequest(options, cb);
   });
 
+  socket.on('get:schema', function(id, cb) {
+    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    var options = {
+      url: '/schema/'+id,
+      method: 'GET'
+    };
+    bkRequest(options, cb);
+  });
+
   socket.on('insert:schema', function(sch, cb) {
     if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
     var options = {
