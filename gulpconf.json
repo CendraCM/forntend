@@ -9,7 +9,8 @@
     "/etc/nodejs-config/cendra.json:/etc/service-config/service.json"
   ],
   "links": [
-    "virtualhost:cendraws.unc.edu.ar"
+    "virtualhost:cendraws.unc.edu.ar",
+    "virtualhost:yuli2.unc.edu.ar"
   ],
   "entrypoint": ["/opt/project/entrypoint.sh", "debug"]
 }

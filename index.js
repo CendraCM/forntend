@@ -11,6 +11,33 @@ var fs = require('fs');
 var extend = require('extend');
 var RedisStore = require('connect-redis')(session);
 var Promise = require('promise');
+var passport = require('passport');
+var Strategy = require('passport-openidconnect').Strategy;
+
+var oidc = config.oidc||{};
+oidc.callbackURL = 'http://cendra.unc.edu.ar/oidc/callback';
+
+
+passport.use(new Strategy(config.oidc,
+  function(token, tokenSecret, profile, cb) {
+    // In this example, the user's Twitter profile is supplied as the user
+    // record.  In a production-quality application, the Twitter profile should
+    // be associated with a user record in the application's database, which
+    // allows for account linking and authentication with other identity
+    // providers.
+    console.log(token);
+    console.log(tokenSecret);
+    console.log(profile);
+    return cb(null, profile);
+  }));
+
+passport.serializeUser(function(user, done) {
+  done(null, user);
+});
+
+passport.deserializeUser(function(obj, done) {
+  done(null, obj);
+});
 
 app.get('/test', function(req, res, next) {
   res.send('Ok');
@@ -24,8 +51,16 @@ var sessionMiddleware = session(sessionConfig);
 app.use(sessionMiddleware);
 app.use(parser.json());
 app.use(parser.urlencoded({extended: true}));
-app.use(express.static(path.join(__dirname, 'app')));
 app.use('/bower_components', express.static(path.join(__dirname, 'bower_components')));
+app.use('/scripts', express.static(path.join(__dirname, 'app/scripts')));
+app.use('/views', express.static(path.join(__dirname, 'app/views')));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(passport.authenticate('openidconnect', {callbackURL: "/oidc/callback"}), express.static(path.join(__dirname, 'app')));
+app.get('/oidc/callback', passport.authenticate('openidconnect', {callbackURL: "/oidc/callback"}), function(req, res, next) {
+  res.redirect('/');
+});
+
 
 app.use(function(req, res, next) {
   console.log(req.method+' '+req.originalUrl+' %j', req.body);

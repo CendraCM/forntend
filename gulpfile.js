@@ -7,7 +7,7 @@ var watch = require('gulp-watch');
 var config = require('/etc/nodejs-config/cendra');
 var nodemon = require('gulp-nodemon');
 var Docker = require('dockerode');
-var gulp_conf = require('./gulp.conf');
+var gulp_conf = require('./gulpconf');
 var docker = new Docker(gulp_conf.docker);
 var package = require('./package');
 var tar = require('gulp-tar');
@@ -99,6 +99,7 @@ function serveTask() {
       ]
     },
     logLevel: 'debug',
+    logConnections: true,
     errHandler: function(error) {
       console.log(error);
     }
