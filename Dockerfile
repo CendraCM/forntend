@@ -6,7 +6,7 @@ RUN mkdir -p /opt/project
 WORKDIR /opt/project
 
 COPY package.json /opt/project/
-RUN npm install
+RUN NODE_ENV=production npm install
 COPY bower.json /opt/project/
 RUN bower install --allow-root
 COPY index.js /opt/project/
