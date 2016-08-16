@@ -14,9 +14,7 @@ var Promise = require('promise');
 var passport = require('passport');
 var Strategy = require('passport-openidconnect').Strategy;
 
-var oidc = config.oidc||{};
-oidc.callbackURL = 'http://cendra.unc.edu.ar/oidc/callback';
-
+var defaultRequest = request.defaults({baseUrl: config.backend});
 
 passport.use(new Strategy(config.oidc,
   function(token, tokenSecret, profile, cb) {
@@ -25,10 +23,38 @@ passport.use(new Strategy(config.oidc,
     // be associated with a user record in the application's database, which
     // allows for account linking and authentication with other identity
     // providers.
-    console.log(token);
-    console.log(tokenSecret);
-    console.log(profile);
-    return cb(null, profile);
+    new Promise(function(resolve, reject) {
+      defaultRequest('/schema?objName=UserInterface', function(error, response, body) {
+        if(error) return reject(error);
+
+        try {
+          var ui = JSON.parse(body)[0];
+        } catch(error) {
+          return reject(error);
+        }
+        resolve(ui);
+      });
+    })
+    .then(function(ui) {
+      return new Promise(function(resolve, reject) {
+        defaultRequest('/?objInterface='+ui._id+'&externalId='+profile.id, function(error, response, body) {
+          if(error) return reject(error);
+          try {
+            var user = JSON.parse(body)[0];
+          } catch(error) {
+            return reject(error);
+          }
+          resolve(user);
+        })
+      });
+
+    })
+    .then(function(user) {
+      cb(null, user, profile);
+    })
+    .catch(function(err) {
+      cb(err, false, profile);
+    });
   }));
 
 passport.serializeUser(function(user, done) {
@@ -56,17 +82,31 @@ app.use('/scripts', express.static(path.join(__dirname, 'app/scripts')));
 app.use('/views', express.static(path.join(__dirname, 'app/views')));
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(passport.authenticate('openidconnect', {callbackURL: "/oidc/callback"}), express.static(path.join(__dirname, 'app')));
-app.get('/oidc/callback', passport.authenticate('openidconnect', {callbackURL: "/oidc/callback"}), function(req, res, next) {
-  res.redirect('/');
+app.get('/oidc/callback', function(req, res, next) {
+  passport.authenticate('openidconnect', {callbackURL: "/oidc/callback"}, function(err, user, info) {
+    if(err) return res.status(500).send(err);
+    if(!user) {
+      req.session.user='anonymous';
+      req.session.profile=info._json;
+      return res.redirect('/#/notUser')
+    }
+    req.session.user = user._id;
+    res.redirect('/');
+  })(req, res, next);
 });
+app.use(function(req, res, next) {
+  if(!req.session.user) {
+    return res.redirect('/oidc/callback');
+  }
+  next();
+}, express.static(path.join(__dirname, 'app')));
 
 
 app.use(function(req, res, next) {
   console.log(req.method+' '+req.originalUrl+' %j', req.body);
   next();
 });
-var defaultRequest = request.defaults({baseUrl: config.backend});
+
 app.use('/backend', function(req, res, next) {
   console.log('%j', config);
   var headers = extend({}, req.headers);

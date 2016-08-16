@@ -15,6 +15,12 @@
       templateUrl: 'views/doc.html',
       controller: 'DocController',
       controllerAs: 'vm'
+    })
+    .sate('noUser', {
+      url: '/noUser',
+      templateUrl: 'views/noUser.html',
+      controller: 'NoUserController',
+      controllerAs: 'vm'
     });
 
     $urlRouterProvider.otherwise('/');
