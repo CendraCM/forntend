@@ -220,6 +220,10 @@ io.on('connection', function(socket) {
     .nodeify(cb);
   };
 
+  socket.on('nouser:profile', function(cb) {
+    cb(socket.request.session.profile);
+  });
+
   socket.on('insert:document', function(doc, cb) {
     if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
     var options = {

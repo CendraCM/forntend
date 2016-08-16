@@ -16,10 +16,10 @@
       controller: 'DocController',
       controllerAs: 'vm'
     })
-    .sate('noUser', {
-      url: '/noUser',
-      templateUrl: 'views/noUser.html',
-      controller: 'NoUserController',
+    .state('notUser', {
+      url: '/notUser',
+      templateUrl: 'views/notUser.html',
+      controller: 'NotUserController',
       controllerAs: 'vm'
     });
 

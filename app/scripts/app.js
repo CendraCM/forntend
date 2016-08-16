@@ -8,6 +8,8 @@
     'ngResource',
     /*'formly',
     'formlyMaterialTemplate',*/
-    'cendra.builder'
+    'cendra.builder',
+    'formly',
+    'formlyMaterial'
   ]);
 })();
