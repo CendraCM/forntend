@@ -1,9 +1,11 @@
-<div layout="column" layout-wrap layout-margin layout-padding>
-  <h2>Bienvenido <em>{{vm.profile.name}}</em></h2>
-  <p>Actualmente usted no es un usuario registrado.</p>
-  <p>¿Desea generar un usuario para esta aplicación?</p>
-  <div layout="row">
-    <md-button type="submit" ng-click="vm.create()">Aceptar</md-button>
-    <md-button type="submit" ng-click="vm.cancel()">Cancelar</md-button>
-  </div>
+<div layout="row" layout-align="center center" layout-margin layout-padding>
+  <md-card>
+    <div layout="column" layout-wrap layout-margin layout-padding>
+      <h2>Bienvenido <em>{{vm.profile.name.toUpperCase()}}</em></h2>
+      <p>Actualmente usted no es un usuario registrado.</p>
+      <div layout="row" layout-align="center center">
+        <md-button type="submit" ng-click="vm.create()">Crear Usuario</md-button>
+      </div>
+    </div>
+  </md-card>
 </div>

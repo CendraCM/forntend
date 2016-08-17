@@ -11,7 +11,9 @@ angular.module('cendra')
     vm.profile = profile;
   });
 
-
+  vm.create = function() {
+    io.emit('nouser:create');
+  }
 }]);
 
 })();

@@ -22,28 +22,11 @@
           <h2><a ui-sref="root">Cendra CM</a></div>
         </div>
       </md-toolbar>
-      <div layout="row" flex layout-align="start stretch">
-        <md-sidenav md-component-id="menu" class="md-sidenav-left md-whiteframe-z2" md-is-locked-open="true">
-          <md-content>
-            <md-list>
-              <md-list-item>
-                <md-button flex class="md-primary" ui-sref="document">
-                  Nuevo Documento
-                </md-button>
-              </md-list-item>
-              <md-list-item ng-repeat="folder in folders">
-                <md-icon>folder</md-icon> {{folder.objName}} 
-              </md-list-item>
-            </md-list>
-          </md-content>
-
-        </md-sidenav>
-        <md-content ui-view flex layout-padding layout="column"></md-content>
-      </div>
+      <ui-view></ui-view>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    
+
     <!-- bower:js -->
     <script src="/bower_components/angular/angular.js"></script>
     <script src="/bower_components/angular-animate/angular-animate.js"></script>

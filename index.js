@@ -224,6 +224,50 @@ io.on('connection', function(socket) {
     cb(socket.request.session.profile);
   });
 
+  socket.on('nouser:create', function(cb) {
+    if(!socket.request.session.profile) return cb('No profile found.')
+    var options = {
+      url: config.oidc.tokenURL,
+      method: 'POST',
+      headers: {
+        authorization: 'Basic '+(new Buffer(config.oidc.clientID+':'+config.oidc.clientSecret).toString('base64'))
+      },
+      json: {
+        grant_type: 'client_credentials'
+      }
+    }
+    request(options, function(error, response, body) {
+      if(!body||!body.access_token) {
+        return cb('Could not get access token.');
+      }
+      var options = {
+        url: '/schema',
+        qs: {
+          objName: 'UserInterface'
+        },
+        method: 'GET'
+      };
+      bkRequest(options)
+      .then(function(ui) {
+        if(!ui[0]) return cb('Could not get UserInterface.');
+        var options = {
+          url: '/',
+          method: 'POST',
+          json: {
+            objInterface: [ui[0]._id],
+            user: {
+              externalId: [socket.request.session.profile.sub]
+            }
+          },
+          headers: {
+            authorization: 'Bearer '+body.access_token
+          }
+        };
+        bkRequest(options, cb);
+      })
+    })
+  })
+
   socket.on('insert:document', function(doc, cb) {
     if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
     var options = {
