@@ -88,7 +88,7 @@ app.get('/oidc/callback', function(req, res, next) {
     if(!user) {
       req.session.user='anonymous';
       req.session.profile=info._json;
-      return res.redirect('/#/notUser')
+      return res.redirect('/#/notUser');
     }
     req.session.user = user._id;
     res.redirect('/');
@@ -211,6 +211,9 @@ io.on('connection', function(socket) {
         if(error) return reject(error);
         if(response.statusCode >= 400) return reject(body);
         try {
+          if(/application\/json/.test(response.headers['content-type']) && typeof body == 'string') {
+            body = JSON.parse(body);
+          }
           resolve(body);
         } catch(e) {
           reject(e);
