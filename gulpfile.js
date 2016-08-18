@@ -1,122 +1,175 @@
 var gulp = require('gulp');
-var wiredep = require('gulp-wiredep');
-var browser = require('browser-sync').create();
-var inspector = require('browser-sync').create();
-var inject = require('gulp-inject');
-var watch = require('gulp-watch');
-var config = require('/etc/nodejs-config/cendra');
-var nodemon = require('gulp-nodemon');
-var Docker = require('dockerode');
-var gulp_conf = require('./gulpconf');
-var docker = new Docker(gulp_conf.docker);
 var package = require('./package');
-var tar = require('gulp-tar');
-var gitignore = require('gulp-gitignore');
-var vfs = require('vinyl-fs');
 var httpProxy = require('http-proxy');
+var Docker = require('dockerode');
+var config = require('./gulpconf');
+var docker = new Docker(config.docker);
+var tar = require('gulp-tar');
+var vfs = require('vinyl-fs');
 var net = require('net');
+var path = require('path');
 
-//var reload = browser.reload;
+if(config.project.fe) {
+  var inject = require('gulp-inject');
+  var wiredep = require('gulp-wiredep');
+  var angularFilesort = require('gulp-angular-filesort');
+  var concat = require('gulp-concat');
+  var sass = require('gulp-sass');
+  var browser = require('browser-sync').create();
+  var map = require('gulp-map');
 
-function temp() {
-  return gulp.src('./app/index.html').pipe(gulp.dest('.tmp/'));
+  var temp = function temp() {
+    return gulp.src(config.project.fe.index).pipe(gulp.dest('.tmp/'));
+  };
+
+  gulp.task('inject', ['sass'], function injectTask() {
+    var target = temp();
+    // It's not necessary to read the files (will speed up things), we're only after their paths:
+    var js = gulp.src(config.project.fe.js||[]).pipe(angularFilesort()).pipe(map(function(file) {
+      console.log(path.dirname(config.project.fe.index));
+      console.log('%j', file);
+      console.log(file.base);
+      file.base = path.relative(path.resolve(__dirname, path.dirname(config.project.fe.index)), file.base);
+      return file;
+    }));
+
+    var css = gulp.src(config.project.fe.css||[], {read: false}).pipe(map(function(file) {
+      file.dirname = path.relative(path.dirname(config.project.fe.index), file.dirname);
+      return file;
+    }));
+
+    return target
+      .pipe(inject(js))
+      .pipe(inject(css))
+      .pipe(gulp.dest(path.dirname(config.project.fe.index)));
+  });
+
+  gulp.task('bower', function bowerTask() {
+    return temp()
+      .pipe(wiredep({ignorePath: '..', onError: function(err) { console.log(err); }}))
+      .pipe(gulp.dest(path.dirname(config.project.fe.index)));
+  });
+
+  gulp.task('sass', function(done) {
+    if(!config.project.fe.scss) return done();
+    return gulp.src(config.project.fe.scss.src)
+        .pipe(concat('angularProject.scss'))
+        .pipe(sass({outputStyle: 'expanded'}))
+        .pipe(gulp.dest(config.project.fe.scss.dest));
+  });
+
+  gulp.task('proxy', ['watch'], function serveTask(done) {
+    browser.init({
+      proxy: {
+        target: 'http://localhost',
+        ws: true,
+        proxyReq: [
+            function (proxyReq) {
+                proxyReq.setHeader('Host', package.name+'.unc.edu.ar');
+            }
+        ]
+      },
+      errHandler: function(error) {
+        done(error);
+      }
+    });
+  });
+
+  gulp.task('reload', function reloadTask() {
+    browser.reload();
+  });
+
+  gulp.task('serve', ['docker', 'proxy', 'watch']);
+  gulp.task('debug', ['inspect', 'proxy', 'watch']);
+
+} else {
+
+  gulp.task('bower', function(done) {done();});
+  gulp.task('inject', function(done) {done();});
+
 }
 
-function injectTask() {
-  var target = temp();
-  // It's not necessary to read the files (will speed up things), we're only after their paths:
-  var sources = gulp.src(['./app/**/*.js', './app/**/*.css'], {read: false});
+gulp.task('default', ['docker']);
 
-  return target.pipe(inject(sources, {relative: true, ignorePath: '../app'}))
-    .pipe(gulp.dest('./app'));
-}
+gulp.task('tar', function() {
+  return vfs.src(config.project.tar, {base: '.'}).pipe(tar(package.name+'.tar')).pipe(gulp.dest('/tmp/'));
+});
 
-function dockerCreateTask(done) {
+gulp.task('docker:image', ['tar'], function dockerBuildTask(done) {
+  docker.buildImage('/tmp/'+package.name+'.tar', {
+    t: package.name+':'+package.version
+  }, function(error, stream) {
+    if(error) return done(error);
+    docker.modem.demuxStream(stream, process.stdout, process.stderr);
+    stream.on('end', done);
+  });
+});
+
+function dockerCreateTask(params, done) {
   var container = docker.getContainer(package.name);
   container.remove({force: true}, function(err, data) {
-    docker.createContainer({
-      Image: package.name+':'+package.version,
-      name: package.name,
-      Volumes: gulp_conf.volumes,
-      HostConfig: {
-        Binds: gulp_conf.binds,
-        Links: gulp_conf.links
-      }
-    }, function(error, container) {
+    docker.createContainer(params, function(error, container) {
+      if(error) return done(error);
       container.start(function(error, data) {
-        console.log(error);
-        console.log(data);
         done();
       });
     });
   });
 }
 
-function dockerDebugTask(done) {
-  var container = docker.getContainer(package.name);
-  container.remove({force: true}, function(err, data) {
-    docker.createContainer({
-      Image: package.name+':'+package.version,
-      name: package.name,
-      Volumes: gulp_conf.volumes,
-      HostConfig: {
-        Binds: gulp_conf.binds,
-        Links: gulp_conf.links
-      },
-      Entrypoint: ["/opt/project/entrypoint.sh", "debug"]
-    }, function(err, container) {
-      if(err) return done(err);
-      container.attach({
-        stream: true,
-        stdout: true,
-        stderr: true,
-        tty: true
-      }, function(err, stream) {
-        if(err) return done(err);
-
-        stream.pipe(process.stdout);
-
-        container.start(function(err, data) {
-          if(err) return done(err);
-          done && done();
-        });
-      });
-    });
-  });
-}
-
-var BROWSER_SYNC_RELOAD_DELAY = 500;
-
-function serveTask() {
-  browser.init({
-    proxy: {
-      target: 'http://localhost',
-      ws: true,
-      proxyReq: [
-          function (proxyReq) {
-              proxyReq.setHeader('Host', package.name+'.unc.edu.ar');
-          }
-      ]
-    },
-    logLevel: 'debug',
-    logConnections: true,
-    errHandler: function(error) {
-      console.log(error);
+gulp.task('docker', ['docker:image'], function(done) {
+  var volumes = {};
+  var binds = [];
+  var mkv = function(obj) {
+    if(obj.volumes) {
+      for(var i in obj.volumes) {
+        volumes[i] = {};
+        binds.push(path.resolve(__dirname, obj.volumes[i])+':'+i);
+      }
     }
-  });
-  gulp.watch(['index.js'], ['docker:create']);
-  gulp.watch(['styles/**/*.scss'], ['sass', 'docker:create']);
-  watch(['./app/**/*.js', './app/**/*.css'], {events: ['add']}, function() {
-    injectTask().on('end', function() {
-      dockerCreateTask();
-    });
-  });
-  gulp.watch('./bower.json', ['bower', 'docker:create']);
-  gulp.watch(['**/*.html', 'styles/**/*.css', 'scripts/**/*.js'], {cwd: 'app'}, ['reload']);
-}
+  };
 
-function serveInspectorTask() {
+  mkv(config);
+  mkv(config.project);
 
+  dockerCreateTask({
+    Image: package.name+':'+package.version,
+    name: package.name,
+    Volumes: volumes,
+    HostConfig: {
+      Binds: binds,
+      Links: config.links
+    }
+  }, done);
+});
+
+gulp.task('docker:debug', ['docker:image'], function (done) {
+  var volumes = {};
+  var binds = [];
+  var mkv = function(obj) {
+    if(obj.volumes) {
+      for(var i in obj.volumes) {
+        volumes[i] = {};
+        binds.push(path.resolve(__dirname, obj.volumes[i])+':'+i);
+      }
+    }
+  };
+
+  mkv(config);
+  mkv(config.project);
+  dockerCreateTask({
+    Image: package.name+':'+package.version,
+    name: package.name,
+    Volumes: volumes,
+    HostConfig: {
+      Binds: binds,
+      Links: config.links
+    },
+    Entrypoint: ["/opt/project/entrypoint.sh", "debug"]
+  }, done);
+});
+
+gulp.task('inspect', ['docker:debug', 'watch'], function serveTask() {
   var portrange = 45032;
 
   function getPort (cb) {
@@ -140,72 +193,22 @@ function serveInspectorTask() {
     console.log("node inspector listening on http://localhost:"+port+'/?port=5858');
   });
 
-  browser.init({
-    proxy: {
-      target: 'http://localhost',
-      ws: true,
-      proxyReq: [
-          function (proxyReq) {
-              proxyReq.setHeader('Host', package.name+'.unc.edu.ar');
-          }
-      ]
-    }
-  });
-  gulp.watch(['index.js'], ['docker:debug']);
-  gulp.watch(['styles/**/*.scss'], ['sass', 'docker:debug']);
-  watch(['./app/**/*.js', './app/**/*.css'], {events: ['add']}, function() {
-    injectTask().on('end', function() {
-      dockerDebugTask();
-    });
-  });
-  gulp.watch('./bower.json', ['bower', 'docker:debug']);
-  gulp.watch(['**/*.html', 'styles/**/*.css', 'scripts/**/*.js'], {cwd: 'app'}, ['reload:inspector']);
-}
-
-gulp.task('sass', function sassTask() {
-  return gulp.src('./app/styles/**/*.scss')
-    .pipe(sass().on('error', sass.logError))
-    .pipe(gulp.dest('./app/styles'));
 });
 
-gulp.task('inject', injectTask);
-
-gulp.task('bower', function bowerTask() {
-  temp()
-    .pipe(wiredep({ignorePath: '..', onError: function(err) { console.log(err); }}))
-    .pipe(gulp.dest('app'));
+gulp.task('watch', ['bower', 'inject'], function(){
+  var bkfiles = (config.project.bk.js||[]).concat(['/etc/nodejs-config/'+package.name+'.json']);
+  gulp.watch(bkfiles, ['docker:restart']);
+  if(config.project.fe) {
+    var files = (config.project.fe.js||[]).concat(config.project.fe.css||[]);
+    gulp.watch(files.concat(config.project.fe.scss?[config.project.fe.scss.src+'/**/*.scss']:[]), ['inject']);
+    gulp.watch('./bower.json', ['bower']);
+    gulp.watch(files.concat([path.dirname(config.project.fe.index)+'/**/*.html']), ['reload']);
+  }
 });
 
-gulp.task('tar', ['bower', 'inject'], function() {
-  return vfs.src('**/*', {base: '.'}).pipe(gitignore()).pipe(tar(package.name+'.tar')).pipe(gulp.dest('/tmp/'));
-});
-
-gulp.task('docker:build', ['tar'], function dockerBuildTask(done) {
-  docker.buildImage('/tmp/'+package.name+'.tar', {
-    t: package.name+':'+package.version
-  }, function(error, stream) {
-    stream.pipe(process.stdout);
-    stream.on('end', done);
+gulp.task('docker:restart', function(done) {
+  var container = docker.getContainer(package.name);
+  container.restart(function(error) {
+    done(error);
   });
 });
-
-gulp.task('docker:create', ['docker:build'], dockerCreateTask);
-
-gulp.task('docker:debug', ['docker:build'], dockerDebugTask);
-
-gulp.task('reload', ['docker:create'], function reloadTask() {
-  browser.reload();
-});
-
-gulp.task('reload:inspector', ['docker:debug'], function reloadInspectorTask() {
-  browser.reload();
-  inspector.reload();
-});
-
-gulp.task('serve', ['docker:create'], serveTask);
-
-gulp.task('debug', ['docker:debug'], serveInspectorTask);
-
-gulp.task('proxy', serveTask);
-
-gulp.task('default', ['docker:create']);

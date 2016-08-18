@@ -2,7 +2,7 @@
 'use strict';
 
 angular.module('cendra')
-.controller('NotUserController', ['io', '$state', '$scope', function(io, $state, $scope) {
+.controller('NotUserController', ['io', '$state', '$location', function(io, $state, $location) {
   var vm = this;
 
   vm.profile=null;
@@ -12,8 +12,10 @@ angular.module('cendra')
   });
 
   vm.create = function() {
-    io.emit('nouser:create');
-  }
+    io.emit('nouser:create', function(err, user) {
+      $state.go('root.main');
+    });
+  };
 }]);
 
 })();

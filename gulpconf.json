@@ -2,15 +2,34 @@
   "docker": {
     "socketPath": "/var/run/docker.sock"
   },
-  "volumes": {
-    "/etc/service-config/service.json": {}
+  "project": {
+    "volumes": {
+      "/opt/project/app": "app",
+      "/opt/project/bower_components": "bower_components",
+      "/opt/project/bower.json": "bower.json",
+      "/opt/project/node_modules": "node_modules",
+      "/opt/project/package.json": "package.json",
+      "/opt/project/index.js": "index.js"
+    },
+    "bk": {
+      "js": [
+        "index.js"
+      ]
+    },
+    "fe": {
+      "index": "app/index.html",
+      "js": ["app/**/*.js"]
+    },
+    "tar": [
+      "Dockerfile",
+      "entrypoint.sh"
+    ]
   },
-  "binds": [
-    "/etc/nodejs-config/cendra.json:/etc/service-config/service.json"
-  ],
+  "volumes": {
+    "/etc/service-config/service.json": "/etc/nodejs-config/cendra.json"
+  },
   "links": [
     "virtualhost:cendraws.unc.edu.ar",
     "virtualhost:yuli2.unc.edu.ar"
-  ],
-  "entrypoint": ["/opt/project/entrypoint.sh", "debug"]
+  ]
 }

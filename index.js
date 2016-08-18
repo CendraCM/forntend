@@ -267,10 +267,12 @@ io.on('connection', function(socket) {
             authorization: 'Bearer '+body.access_token
           }
         };
-        bkRequest(options, cb);
-      })
-    })
-  })
+        bkRequest(options, function(err, user) {
+          cb(err, user);
+        });
+      });
+    });
+  });
 
   socket.on('insert:document', function(doc, cb) {
     if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
