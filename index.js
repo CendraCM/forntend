@@ -258,6 +258,7 @@ io.on('connection', function(socket) {
           method: 'POST',
           json: {
             objInterface: [ui[0]._id],
+            objName: socket.request.session.profile.name.toUpperCase(),
             user: {
               externalId: [socket.request.session.profile.sub]
             }
