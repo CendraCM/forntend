@@ -11,12 +11,15 @@ var fs = require('fs');
 var extend = require('extend');
 var RedisStore = require('connect-redis')(session);
 var Promise = require('promise');
-var passport = require('passport');
-var Strategy = require('passport-openidconnect').Strategy;
+/*var passport = require('passport');
+var Strategy = require('passport-openidconnect').Strategy;*/
+var issuer = require('openid-client').Issuer;
+var yuliIssuer = new issuer(config.issuer);
+var oidc = new yuliIssuer.Client(config.creds);
 
 var defaultRequest = request.defaults({baseUrl: config.backend});
-
-passport.use(new Strategy(config.oidc,
+var interfaces = {};
+/*passport.use(new Strategy(config.oidc,
   function(token, tokenSecret, profile, cb) {
     // In this example, the user's Twitter profile is supplied as the user
     // record.  In a production-quality application, the Twitter profile should
@@ -63,7 +66,7 @@ passport.serializeUser(function(user, done) {
 
 passport.deserializeUser(function(obj, done) {
   done(null, obj);
-});
+});*/
 
 app.get('/test', function(req, res, next) {
   res.send('Ok');
@@ -80,10 +83,50 @@ app.use(parser.urlencoded({extended: true}));
 app.use('/bower_components', express.static(path.join(__dirname, 'bower_components')));
 app.use('/scripts', express.static(path.join(__dirname, 'app/scripts')));
 app.use('/views', express.static(path.join(__dirname, 'app/views')));
-app.use(passport.initialize());
-app.use(passport.session());
 app.get('/oidc/callback', function(req, res, next) {
-  passport.authenticate('openidconnect', {callbackURL: "/oidc/callback"}, function(err, user, info) {
+  Promise.all([
+    oidc.authorizationCallback(req.protocol+'://'+req.headers.host+'/oidc/callback', req.query)
+    .then(function(tokenSet) {
+      req.session.tokenSet = tokenSet;
+      return oidc.userinfo(tokenSet);
+    }),
+    new Promise(function(resolve, reject) {
+      if(interfaces.UserInterface) return resolve(interfaces.UserInterface);
+      defaultRequest('/schema?objName=UserInterface', function(error, response, body) {
+        if(error) return reject(error);
+
+        try {
+          var ui = JSON.parse(body)[0];
+        } catch(error) {
+          return reject(error);
+        }
+        interfaces.UserInterface = ui;
+        resolve(ui);
+      });
+    })
+  ])
+  .then(function(r) {
+    defaultRequest('/?objInterface='+r[1]._id+'&user.externalId='+r[0].sub, function(error, response, body) {
+      if(error) return res.status(500).send(error);
+      try {
+        var user = JSON.parse(body)[0];
+      } catch(error) {
+        return res.status(500).send(error);
+      }
+      if(!user) {
+        req.session.user='anonymous';
+        req.session.profile=r[0];
+        return res.redirect('/#/notUser');
+      }
+      req.session.user = user._id;
+      res.redirect('/');
+    })
+  })
+  .catch(function(err) {
+    res.status(500).send(err);
+  });
+
+  /*passport.authenticate('openidconnect', {callbackURL: "/oidc/callback"}, function(err, user, info) {
     if(err) return res.status(500).send(err);
     if(!user) {
       req.session.user='anonymous';
@@ -92,12 +135,13 @@ app.get('/oidc/callback', function(req, res, next) {
     }
     req.session.user = user._id;
     res.redirect('/');
-  })(req, res, next);
+  })(req, res, next);*/
 });
 app.use(function(req, res, next) {
   if(!req.session.user) {
-    return res.redirect('/oidc/callback');
+    return res.redirect(oidc.authorizationUrl({redirect_uri: req.protocol+'://'+req.headers.host+'/oidc/callback', scope: 'openid'}));
   }
+  if(req.session.user == 'anonymous') delete req.session.user;
   next();
 }, express.static(path.join(__dirname, 'app')));
 

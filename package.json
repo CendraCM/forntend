@@ -23,6 +23,7 @@
     "express": "^4.13.4",
     "express-session": "^1.13.0",
     "extend": "^3.0.0",
+    "openid-client": "^0.5.1",
     "passport": "^0.3.2",
     "passport-openidconnect": "0.0.1",
     "promise": "^7.1.1",
