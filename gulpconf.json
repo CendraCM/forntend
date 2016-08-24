@@ -9,7 +9,8 @@
       "/opt/project/bower.json": "bower.json",
       "/opt/project/node_modules": "node_modules",
       "/opt/project/package.json": "package.json",
-      "/opt/project/index.js": "index.js"
+      "/opt/project/index.js": "index.js",
+      "/home/agustin/git/cendraCM/doc-builder": "/home/agustin/git/cendraCM/doc-builder"
     },
     "bk": {
       "js": [
@@ -30,6 +31,7 @@
   },
   "links": [
     "virtualhost:cendraws.unc.edu.ar",
-    "virtualhost:yuli2.unc.edu.ar"
+    "virtualhost:yuli2.unc.edu.ar",
+    "redis:redis"
   ]
 }

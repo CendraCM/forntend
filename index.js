@@ -106,7 +106,7 @@ app.get('/oidc/callback', function(req, res, next) {
     })
   ])
   .then(function(r) {
-    defaultRequest('/?objInterface='+r[1]._id+'&user.externalId='+r[0].sub, function(error, response, body) {
+    defaultRequest({url: '/?objInterface='+r[1]._id+'&user.externalId='+r[0].sub, headers: {authorization: 'Bearer '+req.session.tokenSet.access_token}}, function(error, response, body) {
       if(error) return res.status(500).send(error);
       try {
         var user = JSON.parse(body)[0];
@@ -178,6 +178,7 @@ io.use(function(socket, next) {
 io.on('connection', function(socket) {
   var user = null;
   var queue = null;
+  var tokenSet = null;
 
   if(config.redis) queue = require('redis-event-queue')(config.redis).broadcast;
 
@@ -204,25 +205,15 @@ io.on('connection', function(socket) {
       });
     })
     .then(function(schemaId) {
-      return new Promise(function(resolve, reject) {
-        var options = {
-          url: '/',
-          qs: {
-            objInterface: schemaId,
-            objLinks: user._id
-          },
-          method: 'GET'
-        };
-        defaultRequest(options, function(error, response, body){
-          if(error) return reject(error);
-          if(response.statusCode !== 200) return reject(body);
-          try {
-            resolve(JSON.parse(body));
-          } catch(e) {
-            reject(e);
-          }
-        });
-      });
+      var options = {
+        url: '/',
+        qs: {
+          objInterface: schemaId,
+          "group.objLinks": user
+        },
+        method: 'GET'
+      };
+      return bkRequest(options);
     })
     .then(function(groups) {
       groups.forEach(function(group) {
@@ -243,6 +234,7 @@ io.on('connection', function(socket) {
   var isLoggedIn = function() {
     if(user && user === socket.request.session.user) return true;
     user = socket.request.session.user;
+    tokenSet = socket.request.session.tokenSet;
     if(user) setListeners();
     return !!user;
   };
@@ -251,6 +243,10 @@ io.on('connection', function(socket) {
 
   var bkRequest = function(options, cb) {
     return new Promise(function(resolve, reject) {
+      if(!options.headers) options.headers = {};
+      if(!options.headers.authorization && tokenSet) {
+        options.headers.authorization = 'Bearer '+tokenSet.access_token;
+      }
       defaultRequest(options, function(error, response, body){
         if(error) return reject(error);
         if(response.statusCode >= 400) return reject(body);
@@ -272,21 +268,28 @@ io.on('connection', function(socket) {
   });
 
   socket.on('nouser:create', function(cb) {
-    if(!socket.request.session.profile) return cb('No profile found.')
-    var options = {
-      url: config.oidc.tokenURL,
-      method: 'POST',
-      headers: {
-        authorization: 'Basic '+(new Buffer(config.oidc.clientID+':'+config.oidc.clientSecret).toString('base64'))
-      },
-      json: {
-        grant_type: 'client_credentials'
-      }
-    }
-    request(options, function(error, response, body) {
-      if(!body||!body.access_token) {
-        return cb('Could not get access token.');
-      }
+    if(!socket.request.session.profile) return cb('No profile found.');
+    if(!socket.request.session.tokenSet) return cb('Access Token not found.');
+    var mkuser = function() {
+      var options = {
+        url: '/',
+        method: 'POST',
+        json: {
+          objInterface: [interfaces.UserInterface._id],
+          objName: socket.request.session.profile.name.toUpperCase(),
+          user: {
+            externalId: [socket.request.session.profile.sub]
+          }
+        },
+        headers: {
+          authorization: 'Bearer '+tokenSet.access_token
+        }
+      };
+      bkRequest(options, function(err, user) {
+        cb(err, user);
+      });
+    };
+    if(!interfaces.UserInterface) {
       var options = {
         url: '/schema',
         qs: {
@@ -297,25 +300,12 @@ io.on('connection', function(socket) {
       bkRequest(options)
       .then(function(ui) {
         if(!ui[0]) return cb('Could not get UserInterface.');
-        var options = {
-          url: '/',
-          method: 'POST',
-          json: {
-            objInterface: [ui[0]._id],
-            objName: socket.request.session.profile.name.toUpperCase(),
-            user: {
-              externalId: [socket.request.session.profile.sub]
-            }
-          },
-          headers: {
-            authorization: 'Bearer '+body.access_token
-          }
-        };
-        bkRequest(options, function(err, user) {
-          cb(err, user);
-        });
+        interfaces.UserInterface = ui[0];
+        mkuser();
       });
-    });
+    } else {
+      mkuser();
+    }
   });
 
   socket.on('insert:document', function(doc, cb) {
@@ -348,6 +338,10 @@ io.on('connection', function(socket) {
   });
 
   socket.on('list:document', function(filter, cb) {
+    if(!cb && typeof filter == 'function') {
+      cb = filter;
+      filter = {};
+    }
     if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
     var options = {
       url: '/',
@@ -355,6 +349,10 @@ io.on('connection', function(socket) {
       method: 'GET'
     };
     bkRequest(options, cb);
+  });
+
+  socket.on('list:rootFolder', function(cb) {
+
   });
 
   socket.on('get:document', function(id, cb) {
