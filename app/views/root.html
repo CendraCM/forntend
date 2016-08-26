@@ -3,13 +3,12 @@
   <md-content>
     <md-list>
       <md-list-item>
-        <md-button flex class="md-primary" ui-sref="document">
+        <md-button flex class="md-primary" ui-sref="root.document">
           Nuevo Documento
         </md-button>
       </md-list-item>
-      <md-list-item ng-repeat="folder in folders">
-        <md-icon>folder</md-icon> {{folder.objName}}
-      </md-list-item>
+      <cd-tree ng-model="vm.folders" label="objName" child="folder.objLinks"></cd-tree>
+        {{vm}} hola?
     </md-list>
   </md-content>
 

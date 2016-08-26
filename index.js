@@ -118,7 +118,7 @@ app.get('/oidc/callback', function(req, res, next) {
         req.session.profile=r[0];
         return res.redirect('/#/notUser');
       }
-      req.session.user = user._id;
+      req.session.user = user;
       res.redirect('/');
     })
   })
@@ -176,16 +176,17 @@ io.use(function(socket, next) {
 });
 
 io.on('connection', function(socket) {
-  var user = null;
+  var userObj = null;
   var queue = null;
   var tokenSet = null;
+  var profile = null;
 
   if(config.redis) queue = require('redis-event-queue')(config.redis).broadcast;
 
   var setListeners = function() {
     if(!queue) return;
     queue.removeAllListeners();
-    if(!user) return;
+    if(!userObj) return;
     new Promise(function(resolve, reject) {
       var options = {
         url: '/schema',
@@ -209,7 +210,7 @@ io.on('connection', function(socket) {
         url: '/',
         qs: {
           objInterface: schemaId,
-          "group.objLinks": user
+          "group.objLinks": userObj._id
         },
         method: 'GET'
       };
@@ -232,11 +233,12 @@ io.on('connection', function(socket) {
   };
 
   var isLoggedIn = function() {
-    if(user && user === socket.request.session.user) return true;
-    user = socket.request.session.user;
+    if(userObj && userObj === socket.request.session.user) return true;
+    userObj = socket.request.session.user;
     tokenSet = socket.request.session.tokenSet;
-    if(user) setListeners();
-    return !!user;
+    profile = socket.request.session.profile;
+    if(userObj) setListeners();
+    return !!userObj;
   };
 
   isLoggedIn();
@@ -263,6 +265,37 @@ io.on('connection', function(socket) {
     .nodeify(cb);
   };
 
+  var setUserData = function() {
+    if(profile) {
+      socket.emit('userName:set', profile.name);
+    } else if(tokenSet){
+      oidc.userinfo(tokenSet)
+      .then(function(prof) {
+        profile = socket.request.session.profile = prof;
+        socket.request.session.save();
+        socket.emit('userName:set', profile.name);
+      });
+    }
+    if(userObj.user.baseDirectory) {
+      socket.emit('baseDirectory:set', userObj.user.baseDirectory);
+    } else {
+      var options = {
+        url: '/'+userObj._id,
+        method: 'GET'
+      };
+      bkRequest(options, function(err, user) {
+        if(err) return socket.emit('error', err);
+        if(user) {
+          socket.request.session.user = user;
+          socket.request.session.save();
+          isLoggedIn();
+          socket.emit('baseDirectory:set', user.baseDirectory);
+        }
+      });
+    }
+
+  }
+
   socket.on('nouser:profile', function(cb) {
     cb(socket.request.session.profile);
   });
@@ -286,6 +319,12 @@ io.on('connection', function(socket) {
         }
       };
       bkRequest(options, function(err, user) {
+        if(user) {
+          socket.request.session.user = user;
+          socket.request.session.save();
+          isLoggedIn();
+          setUserData();
+        }
         cb(err, user);
       });
     };
@@ -351,8 +390,9 @@ io.on('connection', function(socket) {
     bkRequest(options, cb);
   });
 
-  socket.on('list:rootFolder', function(cb) {
-
+  socket.on('get:userData', function(cb) {
+    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    setUserData();
   });
 
   socket.on('get:document', function(id, cb) {

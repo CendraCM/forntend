@@ -5,7 +5,9 @@
   .config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
     $stateProvider
     .state('root', {
-      templateUrl: 'views/root.html'
+      templateUrl: 'views/root.html',
+      controller: 'RootController',
+      controllerAs: 'vm'
     })
     .state('root.main', {
       url: '/',

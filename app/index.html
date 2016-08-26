@@ -15,15 +15,16 @@
     <!-- endinject -->
 
   </head>
-  <body layout="column" ng-cloak ng-app="cendra">
-    <div layout="column" ng-controller="GeneralController">
-      <md-toolbar>
-        <div class="md-toolbar-tools">
-          <h2><a ui-sref="root">Cendra CM</a></div>
-        </div>
-      </md-toolbar>
-      <ui-view layout="column" flex></ui-view>
-    </div>
+  <body layout="column" ng-cloak ng-app="cendra" ng-controller="GeneralController">
+    <md-toolbar>
+      <div class="md-toolbar-tools">
+        <h2><a ui-sref="root">Cendra CM</a></h2>
+        <div flex></div>
+        <div>{{vm.name}}</div>
+      </div>
+    </md-toolbar>
+    <ui-view layout="column" flex></ui-view>
+
 
     <script src="/socket.io/socket.io.js"></script>
 
@@ -43,12 +44,14 @@
 
     <!-- inject:js -->
     <script src="/scripts/app.js"></script>
+    <script src="/scripts/controllers/root.controller.js"></script>
     <script src="/scripts/controllers/notUser.controller.js"></script>
     <script src="/scripts/controllers/main.controller.js"></script>
     <script src="/scripts/controllers/doc.controller.js"></script>
     <script src="/scripts/app_router.js"></script>
     <script src="/scripts/app_general.js"></script>
     <script src="/scripts/app_factory.js"></script>
+    <script src="/scripts/app_directive.js"></script>
     <script src="/scripts/app_config.js"></script>
     <!-- endinject -->
 
