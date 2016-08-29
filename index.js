@@ -11,62 +11,12 @@ var fs = require('fs');
 var extend = require('extend');
 var RedisStore = require('connect-redis')(session);
 var Promise = require('promise');
-/*var passport = require('passport');
-var Strategy = require('passport-openidconnect').Strategy;*/
 var issuer = require('openid-client').Issuer;
 var yuliIssuer = new issuer(config.issuer);
 var oidc = new yuliIssuer.Client(config.creds);
 
 var defaultRequest = request.defaults({baseUrl: config.backend});
 var interfaces = {};
-/*passport.use(new Strategy(config.oidc,
-  function(token, tokenSecret, profile, cb) {
-    // In this example, the user's Twitter profile is supplied as the user
-    // record.  In a production-quality application, the Twitter profile should
-    // be associated with a user record in the application's database, which
-    // allows for account linking and authentication with other identity
-    // providers.
-    new Promise(function(resolve, reject) {
-      defaultRequest('/schema?objName=UserInterface', function(error, response, body) {
-        if(error) return reject(error);
-
-        try {
-          var ui = JSON.parse(body)[0];
-        } catch(error) {
-          return reject(error);
-        }
-        resolve(ui);
-      });
-    })
-    .then(function(ui) {
-      return new Promise(function(resolve, reject) {
-        defaultRequest('/?objInterface='+ui._id+'&externalId='+profile.id, function(error, response, body) {
-          if(error) return reject(error);
-          try {
-            var user = JSON.parse(body)[0];
-          } catch(error) {
-            return reject(error);
-          }
-          resolve(user);
-        })
-      });
-
-    })
-    .then(function(user) {
-      cb(null, user, profile);
-    })
-    .catch(function(err) {
-      cb(err, false, profile);
-    });
-  }));
-
-passport.serializeUser(function(user, done) {
-  done(null, user);
-});
-
-passport.deserializeUser(function(obj, done) {
-  done(null, obj);
-});*/
 
 app.get('/test', function(req, res, next) {
   res.send('Ok');
@@ -76,6 +26,36 @@ var sessionConfig = {resave: false, saveUninitialized: false, secret: 'fasñdlfk
 if(config.redis) {
   sessionConfig.store = new RedisStore(config.redis);
 }
+
+
+function getInterface(req, name) {
+  var query = '';
+  if(!req.session.interfaces) req.session.interfaces = {};
+  if(name) {
+    if(req.session.interfaces[name]) return Promise.resolve(req.session.interfaces[name]);
+    query = '?objName='+name;
+  }
+  return new Promise(function(resolve, reject) {
+    defaultRequest('/schema'+query, function(error, response, body) {
+      if(error) return reject(error);
+      var uis = [];
+      try {
+        uis = JSON.parse(body);
+      } catch(error) {
+        return reject(error);
+      }
+      for(var i in uis) {
+        req.session.interfaces[uis[i].objName] = uis[i];
+      }
+      req.session.save();
+      if(name) {
+        return req.session.interfaces[name]?resolve(req.session.interfaces[name]):reject('interface with name '+name+' not found.');
+      }
+      resolve(ui);
+    });
+  });
+}
+
 var sessionMiddleware = session(sessionConfig);
 app.use(sessionMiddleware);
 app.use(parser.json());
@@ -90,52 +70,29 @@ app.get('/oidc/callback', function(req, res, next) {
       req.session.tokenSet = tokenSet;
       return oidc.userinfo(tokenSet);
     }),
-    new Promise(function(resolve, reject) {
-      if(interfaces.UserInterface) return resolve(interfaces.UserInterface);
-      defaultRequest('/schema?objName=UserInterface', function(error, response, body) {
-        if(error) return reject(error);
-
-        try {
-          var ui = JSON.parse(body)[0];
-        } catch(error) {
-          return reject(error);
-        }
-        interfaces.UserInterface = ui;
-        resolve(ui);
-      });
-    })
+    getInterface(req, 'UserInterface')
   ])
   .then(function(r) {
     defaultRequest({url: '/?objInterface='+r[1]._id+'&user.externalId='+r[0].sub, headers: {authorization: 'Bearer '+req.session.tokenSet.access_token}}, function(error, response, body) {
       if(error) return res.status(500).send(error);
+      var user;
       try {
-        var user = JSON.parse(body)[0];
+        user = JSON.parse(body)[0];
       } catch(error) {
         return res.status(500).send(error);
       }
+      req.session.profile=r[0];
       if(!user) {
         req.session.user='anonymous';
-        req.session.profile=r[0];
         return res.redirect('/#/notUser');
       }
       req.session.user = user;
       res.redirect('/');
-    })
+    });
   })
   .catch(function(err) {
     res.status(500).send(err);
   });
-
-  /*passport.authenticate('openidconnect', {callbackURL: "/oidc/callback"}, function(err, user, info) {
-    if(err) return res.status(500).send(err);
-    if(!user) {
-      req.session.user='anonymous';
-      req.session.profile=info._json;
-      return res.redirect('/#/notUser');
-    }
-    req.session.user = user._id;
-    res.redirect('/');
-  })(req, res, next);*/
 });
 app.use(function(req, res, next) {
   if(!req.session.user) {
@@ -180,6 +137,7 @@ io.on('connection', function(socket) {
   var queue = null;
   var tokenSet = null;
   var profile = null;
+  var req = socket.request;
 
   if(config.redis) queue = require('redis-event-queue')(config.redis).broadcast;
 
@@ -187,29 +145,12 @@ io.on('connection', function(socket) {
     if(!queue) return;
     queue.removeAllListeners();
     if(!userObj) return;
-    new Promise(function(resolve, reject) {
-      var options = {
-        url: '/schema',
-        qs: {
-          objName: 'GroupInterface'
-        },
-        method: 'GET'
-      };
-      defaultRequest(options, function(error, response, body){
-        if(error) return reject(error);
-        if(response.statusCode !== 200) return reject(body);
-        try {
-          resolve(JSON.parse(body)[0]._id);
-        } catch(e) {
-          reject(e);
-        }
-      });
-    })
-    .then(function(schemaId) {
+    getInterface(req, 'GroupInterface')
+    .then(function(gi) {
       var options = {
         url: '/',
         qs: {
-          objInterface: schemaId,
+          objInterface: gi._id,
           "group.objLinks": userObj._id
         },
         method: 'GET'
@@ -233,10 +174,10 @@ io.on('connection', function(socket) {
   };
 
   var isLoggedIn = function() {
-    if(userObj && userObj === socket.request.session.user) return true;
-    userObj = socket.request.session.user;
-    tokenSet = socket.request.session.tokenSet;
-    profile = socket.request.session.profile;
+    if(userObj && userObj === req.session.user) return true;
+    userObj = req.session.user;
+    tokenSet = req.session.tokenSet;
+    profile = req.session.profile;
     if(userObj) setListeners();
     return !!userObj;
   };
@@ -271,13 +212,13 @@ io.on('connection', function(socket) {
     } else if(tokenSet){
       oidc.userinfo(tokenSet)
       .then(function(prof) {
-        profile = socket.request.session.profile = prof;
-        socket.request.session.save();
+        profile = req.session.profile = prof;
+        req.session.save();
         socket.emit('userName:set', profile.name);
       });
     }
-    if(userObj.user.baseDirectory) {
-      socket.emit('baseDirectory:set', userObj.user.baseDirectory);
+    if(userObj.user.rootFolder) {
+      socket.emit('rootFolder:set', userObj.user.rootFolder);
     } else {
       var options = {
         url: '/'+userObj._id,
@@ -286,32 +227,32 @@ io.on('connection', function(socket) {
       bkRequest(options, function(err, user) {
         if(err) return socket.emit('error', err);
         if(user) {
-          socket.request.session.user = user;
-          socket.request.session.save();
+          req.session.user = user;
+          req.session.save();
           isLoggedIn();
-          socket.emit('baseDirectory:set', user.baseDirectory);
+          socket.emit('rootFolder:set', user.user.rootFolder);
         }
       });
     }
-
-  }
+  };
 
   socket.on('nouser:profile', function(cb) {
-    cb(socket.request.session.profile);
+    cb(req.session.profile);
   });
 
   socket.on('nouser:create', function(cb) {
-    if(!socket.request.session.profile) return cb('No profile found.');
-    if(!socket.request.session.tokenSet) return cb('Access Token not found.');
-    var mkuser = function() {
+    if(!req.session.profile) return cb('No profile found.');
+    if(!req.session.tokenSet) return cb('Access Token not found.');
+    getInterface(req, 'UserInterface')
+    .then(function(ui) {
       var options = {
         url: '/',
         method: 'POST',
         json: {
-          objInterface: [interfaces.UserInterface._id],
-          objName: socket.request.session.profile.name.toUpperCase(),
+          objInterface: [ui._id],
+          objName: req.session.profile.name.toUpperCase(),
           user: {
-            externalId: [socket.request.session.profile.sub]
+            externalId: [req.session.profile.sub]
           }
         },
         headers: {
@@ -320,31 +261,14 @@ io.on('connection', function(socket) {
       };
       bkRequest(options, function(err, user) {
         if(user) {
-          socket.request.session.user = user;
-          socket.request.session.save();
+          req.session.user = user;
+          req.session.save();
           isLoggedIn();
           setUserData();
         }
         cb(err, user);
       });
-    };
-    if(!interfaces.UserInterface) {
-      var options = {
-        url: '/schema',
-        qs: {
-          objName: 'UserInterface'
-        },
-        method: 'GET'
-      };
-      bkRequest(options)
-      .then(function(ui) {
-        if(!ui[0]) return cb('Could not get UserInterface.');
-        interfaces.UserInterface = ui[0];
-        mkuser();
-      });
-    } else {
-      mkuser();
-    }
+    });
   });
 
   socket.on('insert:document', function(doc, cb) {
@@ -390,9 +314,54 @@ io.on('connection', function(socket) {
     bkRequest(options, cb);
   });
 
-  socket.on('get:userData', function(cb) {
+  socket.on('get:userName', function(cb) {
     if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
-    setUserData();
+    socket.emit('userName:set', profile.name);
+  });
+
+  socket.on('get:folder', function(id, cb) {
+    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    if(!cb && typeof id == 'function') {
+      cb = id;
+      id = userObj.user.rootFolder;
+    }
+    if(!Array.isArray(id)) id = [id];
+    getInterface(req, 'FolderInterface')
+    .then(function(fi) {
+      var options = {
+        url: '/',
+        qs: {
+          objInterface: fi._id,
+          _id: {$in: id}
+        },
+        method: 'GET'
+      };
+      bkRequest(options)
+      .then(function(folders) {
+        return Promise.all(folders.map(function(instance) {
+          return new Promise(function(resolve, reject) {
+            if(!instance.folder.objLinks||!instance.folder.objLinks.length) {
+              return resolve(instance);
+            }
+            var options = {
+              url: '/',
+              qs: {
+                objInterface: fi._id,
+                _id: {$in: instance.folder.objLinks}
+              },
+              method: 'GET'
+            };
+            bkRequest(options)
+            .then(function(subFolders) {
+              instance.subFolders = subFolders;
+              resolve(instance);
+            })
+            .catch(reject);
+          });
+        }));
+      })
+      .nodeify(cb);
+    });
   });
 
   socket.on('get:document', function(id, cb) {
