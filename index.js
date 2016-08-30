@@ -138,6 +138,7 @@ io.on('connection', function(socket) {
   var tokenSet = null;
   var profile = null;
   var req = socket.request;
+  var timeout;
 
   if(config.redis) queue = require('redis-event-queue')(config.redis).broadcast;
 
@@ -173,10 +174,31 @@ io.on('connection', function(socket) {
     });
   };
 
+  socket.on('disconnect', function() {
+    if(queue) queue.removeAllListeners();
+    if(timeout) clearTimeout(timeout);
+  });
+
+  var refreshToken = function() {
+    if(tokenSet) {
+      if(timeout) clearTimeout(timeout);
+      var now = new Date() / 1000 | 0;
+      var expires_in = Math.max.apply(null, [tokenSet.expires_at - now, 0]);
+      timeout = setTimeout(function () {
+        oidc.refresh(tokenSet.refresh_token)
+        .then(function (ts) {
+          tokenSet = ts;
+          refreshToken();
+        });
+      }, expires_in * 1000);
+    }
+  };
+
   var isLoggedIn = function() {
     if(userObj && userObj === req.session.user) return true;
     userObj = req.session.user;
     tokenSet = req.session.tokenSet;
+    refreshToken();
     profile = req.session.profile;
     if(userObj) setListeners();
     return !!userObj;
@@ -325,7 +347,11 @@ io.on('connection', function(socket) {
       cb = id;
       id = userObj.user.rootFolder;
     }
-    if(!Array.isArray(id)) id = [id];
+    var wasNotArray = false;
+    if(!Array.isArray(id)) {
+      wasNotArray = true;
+      id = [id];
+    }
     getInterface(req, 'FolderInterface')
     .then(function(fi) {
       var options = {
@@ -359,6 +385,42 @@ io.on('connection', function(socket) {
             .catch(reject);
           });
         }));
+      })
+      .then(function(folders) {
+        if(wasNotArray) folders = folders[0];
+        return Promise.resolve(folders);
+      })
+      .nodeify(cb);
+    });
+  });
+
+  socket.on('get:folder:contents', function(id, cb) {
+    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    getInterface(req, 'FolderInterface')
+    .then(function(fi) {
+      var options = {
+        url: '/'+id,
+        method: 'GET'
+      };
+      bkRequest(options)
+      .then(function(instance) {
+        return new Promise(function(resolve, reject) {
+          if(!instance.folder.objLinks||!instance.folder.objLinks.length) {
+            return resolve([]);
+          }
+          var options = {
+            url: '/',
+            qs: {
+              _id: {$in: instance.folder.objLinks}
+            },
+            method: 'GET'
+          };
+          bkRequest(options)
+          .then(function(contents) {
+            resolve(contents);
+          })
+          .catch(reject);
+        });
       })
       .nodeify(cb);
     });

@@ -19,7 +19,8 @@
     },
     "fe": {
       "index": "app/index.html",
-      "js": ["app/**/*.js"]
+      "js": ["app/**/*.js"],
+      "css": ["app/**/*.css"]
     },
     "tar": [
       "Dockerfile",

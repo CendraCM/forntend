@@ -7,10 +7,9 @@
           Nuevo Documento
         </md-button>
       </md-list-item>
-      <cd-tree ng-model="vm.folders" label="objName" child="folder.objLinks"></cd-tree>
+      <cd-tree ng-model="vm.folders" label="objName" child="subFolders" select="vm.select(item)" selected-item="vm.selectedItem" expand="vm.expand(item)"></cd-tree>
     </md-list>
   </md-content>
-
 </md-sidenav>
 <md-content ui-view flex layout-padding layout="column"></md-content>
 </div>

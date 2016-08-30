@@ -10,7 +10,7 @@
       controllerAs: 'vm'
     })
     .state('root.main', {
-      url: '/',
+      url: '/:id',
       templateUrl: 'views/main.html',
       controller: 'MainController',
       controllerAs: 'vm'

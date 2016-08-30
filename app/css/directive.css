@@ -1,0 +1,26 @@
+cd-tree {
+  margin-left: 8px !important;
+}
+
+cd-tree .no-child {
+  width: 24px;
+}
+
+cd-tree > md-list {
+  padding: 0px;
+}
+
+cd-tree > md-list > md-list-item > .cd-button {
+  margin: 0px 8px;
+  min-height: 48px;
+  position: relative;
+  outline: none;
+}
+
+cd-tree > md-list > md-list-item > .cd-button.selected {
+  font-weight: bolder;
+}
+
+cd-tree > md-list > md-list-item > .cd-button.selected > .folder {
+  color: #4285f4;
+}
