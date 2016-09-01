@@ -8,18 +8,12 @@
       replace: {method: 'PUT', url: '/backend/:id/replace'}
     });
   }])
-  .factory('schema', ['$resource', function($resource) {
-    return $resource('/backend/schema/:id', {id: '@_id'}, {
-      update: {method: 'PUT'},
-      replace: {method: 'PUT', url: '/backend/schema/:id/replace'}
-    });
-  }])
   .factory('io', ['$location', '$mdToast', '$rootScope', function($location, $mdToast, $scope) {
     var socket = io();//io('/', {transports: ['websocket']});
     socket.on('error:auth', function(msg) {
       $scope.$apply(function() {
         $mdToast.showSimple(msg);
-        $location.url('/login');
+        window.location.href=$location.url();
       });
     });
 
