@@ -16,7 +16,6 @@ var yuliIssuer = new issuer(config.issuer);
 var oidc = new yuliIssuer.Client(config.creds);
 
 var defaultRequest = request.defaults({baseUrl: config.backend});
-var interfaces = {};
 
 app.get('/test', function(req, res, next) {
   res.send('Ok');
@@ -27,16 +26,99 @@ if(config.redis) {
   sessionConfig.store = new RedisStore(config.redis);
 }
 
+var schema = {
+  id: function(id) {
+    var r = this.extended?this:extend({extended: true}, this);
+    r.schId = id;
+    return r;
+  },
+  get: function(req, filter) {
+    if(!req.session.interfaces) req.session.interfaces = {};
+    var schUrl = '/schema';
+    var r = this.extended?this:extend({extended: true}, this);
+    if(r.schId) {
+      schUrl += '/'+r.schId;
+      filter = {};
+    }
+    if(filter && typeof filter == 'string') {
+      if(req.session.interfaces[filter]) {
+        r.promise = Promise.resolve(req.session.interfaces[filter]);
+        return r;
+      }
+      filter = {objName: filter};
+    }
+    r.promise = new Promise(function(resolve, reject) {
+      defaultRequest({url: schUrl, qs: filter}, function(error, response, body) {
+        if(error) return reject(error);
+        var uis = [];
+        try {
+          uis = JSON.parse(body);
+        } catch(err) {
+          return reject(err);
+        }
+        for(var i in uis) {
+          req.session.interfaces[uis[i].objName] = uis[i];
+        }
+        req.session.save();
 
-function getInterface(req, name) {
-  var query = '';
+        resolve(uis);
+      });
+    });
+
+    return r;
+  },
+  obj: function() {
+    this.promise = this.promise.then(function(result) {
+      if(!Array.isArray(result)) return Promise.resolve(result);
+      var map = {};
+      result.forEach(function(iface) {
+        map[iface.objName] = iface;
+      });
+      return Promise.resolve(map);
+    });
+    return this;
+  },
+  limit: function(n) {
+    this.promise = this.promise.then(function(result) {
+      if(!Array.isArray(result) || result.length <= n) return Promise.resolve(result);
+      return Promise.resolve(result.slice(0, n));
+    });
+    return this;
+  },
+  first: function() {
+    this.promise = this.promise.then(function(result) {
+      if(!Array.isArray(result)) return Promise.resolve(result);
+      return Promise.resolve(result.shift());
+    });
+    return this;
+  },
+  last: function() {
+    this.promise = this.promise.then(function(result) {
+      if(!Array.isArray(result) || result.length <= n) return Promise.resolve(result);
+      return Promise.resolve(result.pop());
+    });
+    return this;
+  },
+  then: function(resolve, reject) {
+    return this.promise.then(resolve, reject);
+  },
+  catch: function(reject) {
+    return this.promise.catch(reject);
+  },
+  nodeify: function(cb) {
+    return this.promise.nodeify(cb);
+  }
+};
+
+/*function getInterface(req, filter) {
   if(!req.session.interfaces) req.session.interfaces = {};
-  if(name) {
-    if(req.session.interfaces[name]) return Promise.resolve(req.session.interfaces[name]);
-    query = '?objName='+name;
+  var nameFilter = false;
+  if(filter && typeof filter == 'string') {
+    if(req.session.interfaces[filter]) return Promise.resolve(req.session.interfaces[filter]);
+    filter = {objName: filter};
   }
   return new Promise(function(resolve, reject) {
-    defaultRequest('/schema'+query, function(error, response, body) {
+    defaultRequest({url:'/schema', qs: filter}, function(error, response, body) {
       if(error) return reject(error);
       var uis = [];
       try {
@@ -48,13 +130,11 @@ function getInterface(req, name) {
         req.session.interfaces[uis[i].objName] = uis[i];
       }
       req.session.save();
-      if(name) {
-        return req.session.interfaces[name]?resolve(req.session.interfaces[name]):reject('interface with name '+name+' not found.');
-      }
-      resolve(ui);
+
+      resolve(uis);
     });
   });
-}
+}*/
 
 var sessionMiddleware = session(sessionConfig);
 app.use(sessionMiddleware);
@@ -70,7 +150,7 @@ app.get('/oidc/callback', function(req, res, next) {
       req.session.tokenSet = tokenSet;
       return oidc.userinfo(tokenSet);
     }),
-    getInterface(req, 'UserInterface')
+    schema.get(req, 'UserInterface').first()
   ])
   .then(function(r) {
     defaultRequest({url: '/?objInterface='+r[1]._id+'&user.externalId='+r[0].sub, headers: {authorization: 'Bearer '+req.session.tokenSet.access_token}}, function(error, response, body) {
@@ -78,8 +158,8 @@ app.get('/oidc/callback', function(req, res, next) {
       var user;
       try {
         user = JSON.parse(body)[0];
-      } catch(error) {
-        return res.status(500).send(error);
+      } catch(err) {
+        return res.status(500).send(err);
       }
       req.session.profile=r[0];
       if(!user) {
@@ -146,7 +226,8 @@ io.on('connection', function(socket) {
     if(!queue) return;
     queue.removeAllListeners();
     if(!userObj) return;
-    getInterface(req, 'GroupInterface')
+    schema.get(req, 'GroupInterface')
+    .first()
     .then(function(gi) {
       var options = {
         url: '/',
@@ -189,9 +270,18 @@ io.on('connection', function(socket) {
         .then(function (ts) {
           tokenSet = ts;
           refreshToken();
+        })
+        .catch(function(error) {
+          unauthAccess()
         });
       }, expires_in * 1000);
     }
+  };
+
+  var unauthAccess = function() {
+    req.session.user = null;
+    req.session.save();
+    socket.emit('error:auth', 'Unauthorized Access');
   };
 
   var isLoggedIn = function() {
@@ -265,7 +355,8 @@ io.on('connection', function(socket) {
   socket.on('nouser:create', function(cb) {
     if(!req.session.profile) return cb('No profile found.');
     if(!req.session.tokenSet) return cb('Access Token not found.');
-    getInterface(req, 'UserInterface')
+    schema.get(req, 'UserInterface')
+    .first()
     .then(function(ui) {
       var options = {
         url: '/',
@@ -294,7 +385,7 @@ io.on('connection', function(socket) {
   });
 
   socket.on('insert:document', function(doc, cb) {
-    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    if(!isLoggedIn()) return unauthAccess();
     var options = {
       url: '/',
       json: doc,
@@ -304,7 +395,7 @@ io.on('connection', function(socket) {
   });
 
   socket.on('update:document', function(id, doc, cb) {
-    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    if(!isLoggedIn()) return unauthAccess();
     var options = {
       url: '/'+id,
       json: doc,
@@ -314,7 +405,7 @@ io.on('connection', function(socket) {
   });
 
   socket.on('delete:document', function(id, cb) {
-    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    if(!isLoggedIn()) return unauthAccess();
     var options = {
       url: '/'+id,
       method: 'DELETE'
@@ -323,11 +414,11 @@ io.on('connection', function(socket) {
   });
 
   socket.on('list:document', function(filter, cb) {
+    if(!isLoggedIn()) return unauthAccess();
     if(!cb && typeof filter == 'function') {
       cb = filter;
       filter = {};
     }
-    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
     var options = {
       url: '/',
       qs: filter,
@@ -337,12 +428,12 @@ io.on('connection', function(socket) {
   });
 
   socket.on('get:userName', function(cb) {
-    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    if(!isLoggedIn()) return unauthAccess();
     socket.emit('userName:set', profile.name);
   });
 
   socket.on('get:folder', function(id, cb) {
-    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    if(!isLoggedIn()) return unauthAccess();
     if(!cb && typeof id == 'function') {
       cb = id;
       id = userObj.user.rootFolder;
@@ -352,7 +443,8 @@ io.on('connection', function(socket) {
       wasNotArray = true;
       id = [id];
     }
-    getInterface(req, 'FolderInterface')
+    schema.get(req, 'FolderInterface')
+    .first()
     .then(function(fi) {
       var options = {
         url: '/',
@@ -395,8 +487,9 @@ io.on('connection', function(socket) {
   });
 
   socket.on('get:folder:contents', function(id, cb) {
-    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
-    getInterface(req, 'FolderInterface')
+    if(!isLoggedIn()) return unauthAccess();
+    schema.get(req, 'FolderInterface')
+    .first()
     .then(function(fi) {
       var options = {
         url: '/'+id,
@@ -427,7 +520,7 @@ io.on('connection', function(socket) {
   });
 
   socket.on('get:document', function(id, cb) {
-    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    if(!isLoggedIn()) return unauthAccess();
     var options = {
       url: '/'+id,
       method: 'GET'
@@ -436,26 +529,26 @@ io.on('connection', function(socket) {
   });
 
   socket.on('list:schema', function(filter, cb) {
-    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
-    var options = {
-      url: '/schema',
-      qs: filter,
-      method: 'GET'
-    };
-    bkRequest(options, cb);
+    if(!isLoggedIn()) return unauthAccess();
+    schema.get(req, filter)
+    .nodeify(cb);
   });
 
   socket.on('get:schema', function(id, cb) {
-    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
-    var options = {
-      url: '/schema/'+id,
-      method: 'GET'
-    };
-    bkRequest(options, cb);
+    if(!isLoggedIn()) return unauthAccess();
+    schema.id(id)
+    .get(req)
+    .nodeify(cb);
+  });
+
+  socket.on('get:schema:named', function(name, cb) {
+    if(!isLoggedIn()) return unauthAccess();
+    schema.get(req, name)
+    .nodeify(cb);
   });
 
   socket.on('insert:schema', function(sch, cb) {
-    if(!isLoggedIn()) return socket.emit('error:auth', 'Unauthorized Access');
+    if(!isLoggedIn()) return unauthAccess();
     var options = {
       url: '/schema',
       json: sch,

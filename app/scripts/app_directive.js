@@ -13,7 +13,7 @@
             '<md-icon class="folder">folder</md-icon>',
             '<div class="md-list-item-text" flex>{{leaf.label}}</div>',
           '</div>',
-          '<cd-tree ng-if="leaf.children.length && leaf.expanded" child="{{child}}" label="{{label}}" ng-model="leaf.children"></cd-tree>',
+          '<cd-tree ng-if="leaf.children.length && leaf.expanded" child="true" child-key="{{child}}" label-key="{{label}}" ng-model="leaf.children"></cd-tree>',
         '</md-list-item>',
       '</md-list>'
     ].join('');
@@ -21,34 +21,28 @@
       restrict: 'E',
       scope: {
         model: '=ngModel',
-        child: '@',
-        label: '@',
+        childKey: '@',
+        labelKey: '@',
         select: '&?',
         expand: '&?',
-        filter: '&?',
-        selectedItem: '=?'
+        selectedItem: '=?',
+        child: '@?'
       },
       template: template,
       controller: ['$scope', function($scope) {
-        if(!$scope.child) $scope.child = 'children';
-        if(!$scope.label) $scope.label = 'label';
+        if(!$scope.childKey) $scope.childKey = 'children';
+        if(!$scope.labelKey) $scope.labelKey = 'label';
         if(!$scope.select) $scope.select = function noop(){};
         if(!$scope.expand) $scope.expand = function noop(){};
         $scope.$watch('model', function mktree(model) {
           if(!model) return;
           $scope.tree = model.map(function(item) {
             var leaf = {expanded: false, item: item};
-            var children = $scope.child.split('.').reduce(function(memo, path) {
+            leaf.children = $scope.childKey.split('.').reduce(function(memo, path) {
               if(memo===null||!memo[path]) return null;
               return memo[path];
             }, item)||[];
-            if($scope.filter) {
-              children = children.filter(function(child) {
-                return $scope.filter({item: child});
-              });
-            }
-            leaf.children = children;
-            leaf.label = $scope.label.split('.').reduce(function(memo, path) {
+            leaf.label = $scope.labelKey.split('.').reduce(function(memo, path) {
               if(memo===null||!memo[path]) return null;
               return memo[path];
             }, item)||'';
