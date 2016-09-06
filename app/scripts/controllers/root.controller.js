@@ -9,27 +9,58 @@ angular.module('cendra')
 
   io.emit('get:userName');
 
-  io.emit('get:folder', function(error, folders) {
-    vm.folders = folders||[];
-    if(vm.folders.length) {
-      if($location.path() == '/') return vm.select(vm.folders[0]);
-      if(vm.futureSelectedItem) selectFolder(null, vm.futureSelectedItem);
-    }
-  });
+  if($location.path() == '/') {
+    io.emit('get:folder:first', function(error, first) {
+      if($location.path() == '/') return vm.select(first);
+    });
+  }
 
-  var selectFolder = function($event, id) {
-    if(!vm.selectedItem || vm.selectedItem._id !== id) {
-      vm.folders.forEach(function(folder) {
-        if(folder._id == id) {
-          vm.selectedItem = folder;
-        }
-      });
-      if(!vm.selectedItem) vm.futureSelectedItem = id;
-      else vm.futureSelectedItem = null;
+  var findFolder = function(folders, elem, replace) {
+    var id = elem._id||elem;
+    if(!folders||!folders.length) return null;
+    for(var i in folders) {
+      if(folders[i]._id == id) {
+        if(replace) folders[i] = elem;
+        return folders[i];
+      }
+      var leaf = findFolder(folders[i].folder.objLinks, elem, replace);
+      if(leaf !== null) {
+        return leaf;
+      }
     }
+    return null;
   };
 
-  $scope.$on('cd:folder', selectFolder);
+  var getParent = function(id, child) {
+    io.emit('get:folder:parents', id, function(error, instance) {
+      if(child) instance.folder.objLinks = instance.folder.objLinks.map(function(link, i) {
+        return link._id == child._id?child:link;
+      });
+      else vm.selectedItem = instance;
+      var replaced = findFolder(vm.folders, instance, true);
+      if(!replaced && instance.parents) {
+        return instance.parents.forEach(function(parent) {
+          getParent(parent._id, instance);
+        });
+      }
+      if(!vm.folders.length) {
+        io.emit('get:folder', function(error, folders) {
+          vm.folders = folders;
+          var replaced = findFolder(vm.folders, instance, true);
+          if(!replaced) vm.folders.push(instance);
+        });
+      } else {
+        vm.folders.push(instance);
+      }
+    });
+  };
+
+  $scope.$on('cd:folder', function($event, id) {
+    if(!vm.selectedItem || vm.selectedItem._id !== id) {
+      vm.selectedItem = findFolder(vm.folders, id);
+      if(!vm.selectedItem) getParent(id);
+    }
+  });
 
   vm.expand = function(item, cb) {
     if(item.subFolders && item.subFolders.length) {
@@ -43,7 +74,7 @@ angular.module('cendra')
   };
 
   vm.select = function(item) {
-    $state.go('root.main', {id: item._id});
+    if(item) $state.go('root.main', {id: item._id});
   };
 
 }]);

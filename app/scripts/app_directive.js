@@ -6,67 +6,68 @@
     var template = [
       '<md-list>',
         '<md-list-item ng-repeat="leaf in tree" layout="column" layout-align="start stretch">',
-          '<div layout="row" md-ink-ripple="#9A9A9A" layout-align="center center" ng-click="doSelect($event, leaf)" ng-class="{selected: selectedItem == leaf.item}" class="cd-button">',
-            '<md-icon md-ink-ripple="false" ng-if="leaf.children.length && leaf.expanded" class="md-exclude" ng-click="doFold($event, leaf)">keyboard_arrow_down</md-icon>',
-            '<md-icon md-ink-ripple="false" ng-if="leaf.children.length && !leaf.expanded" class="md-exclude" ng-click="doExpand($event, leaf)">keyboard_arrow_right</md-icon>',
-            '<div ng-if="!leaf.children.length" class="no-child"></div>',
+          '<div layout="row" md-ink-ripple="#9A9A9A" layout-align="center center" ng-click="doSelect($event, leaf)" ng-class="{selected: selectedItem == leaf}" class="cd-button">',
+            '<div ng-repeat="space in spaces" class="space"></div>',
+            '<md-icon md-ink-ripple="false" ng-if="leaf.folder.objLinks.length && leaf.expanded" class="md-exclude" ng-click="doFold($event, leaf)">keyboard_arrow_down</md-icon>',
+            '<md-icon md-ink-ripple="false" ng-if="leaf.folder.objLinks.length && !leaf.expanded" class="md-exclude" ng-click="doExpand($event, leaf)">keyboard_arrow_right</md-icon>',
+            '<div ng-if="!leaf.folder.objLinks.length" class="space"></div>',
             '<md-icon class="folder">folder</md-icon>',
-            '<div class="md-list-item-text" flex>{{leaf.label}}</div>',
+            '<div class="md-list-item-text" flex>{{leaf.objName}}</div>',
           '</div>',
-          '<cd-tree ng-if="leaf.children.length && leaf.expanded" child="true" child-key="{{child}}" label-key="{{label}}" ng-model="leaf.children"></cd-tree>',
+          '<cd-tree ng-if="leaf.folder.objLinks.length" ng-show="leaf.expanded" child="true" ng-model="leaf.folder.objLinks" selected-item="selectedItem" level="{{level}}"></cd-tree>',
         '</md-list-item>',
       '</md-list>'
     ].join('');
     return {
       restrict: 'E',
       scope: {
-        model: '=ngModel',
-        childKey: '@',
-        labelKey: '@',
+        tree: '=ngModel',
         select: '&?',
         expand: '&?',
         selectedItem: '=?',
-        child: '@?'
+        child: '@?',
+        level: '@?'
       },
       template: template,
       controller: ['$scope', function($scope) {
-        if(!$scope.childKey) $scope.childKey = 'children';
-        if(!$scope.labelKey) $scope.labelKey = 'label';
-        if(!$scope.select) $scope.select = function noop(){};
-        if(!$scope.expand) $scope.expand = function noop(){};
-        $scope.$watch('model', function mktree(model) {
-          if(!model) return;
-          $scope.tree = model.map(function(item) {
-            var leaf = {expanded: false, item: item};
-            leaf.children = $scope.childKey.split('.').reduce(function(memo, path) {
-              if(memo===null||!memo[path]) return null;
-              return memo[path];
-            }, item)||[];
-            leaf.label = $scope.labelKey.split('.').reduce(function(memo, path) {
-              if(memo===null||!memo[path]) return null;
-              return memo[path];
-            }, item)||'';
-            return leaf;
-          });
-        }, true);
-
+        $scope.spaces = [];
+        $scope.level = parseInt($scope.level||0);
+        var n = 0;
+        while(n < $scope.level) {
+          $scope.spaces.push(null);
+          n++;
+        }
+        $scope.level++;
         $scope.$on('cdTree:select', function($event, item) {
           $scope.selectedItem = item;
-          if($scope.select) $scope.select({item: item});
+          if(!$scope.child && item) $scope.select({item: item});
         });
 
-        $scope.$on('cdTree:expand', function($event, item) {
-          if($scope.expand) $scope.expand({item: item});
+        $scope.$watch('selectedItem', function(leaf) {
+          if($scope.tree.indexOf(leaf)!==-1 && $scope.child) $scope.$emit('cdTree:parent:expand', $scope.tree);
         });
+
+        $scope.$on('cdTree:parent:expand', function($event, tree) {
+          if(!$scope.child) $event.stopPropagation();
+          $scope.tree.forEach(function(leaf) {
+            if(leaf.folder.objLinks == tree) leaf.expanded = true;
+          });
+        });
+
+        if(!$scope.child) {
+          $scope.$on('cdTree:expand', function($event, item) {
+            if($scope.expand) $scope.expand({item: item});
+          });
+        }
 
         $scope.doSelect = function($event, leaf) {
-          $scope.$emit('cdTree:select', leaf.item);
-          $scope.$broadcast('cdTree:select', leaf.item);
+          $scope.$emit('cdTree:select', leaf);
+          $scope.$broadcast('cdTree:select', leaf);
         };
 
         $scope.doExpand = function($event, leaf) {
           $event.stopPropagation();
-          $scope.$emit('cdTree:expand', leaf.item);
+          $scope.$emit('cdTree:expand', leaf);
           leaf.expanded = true;
         };
 

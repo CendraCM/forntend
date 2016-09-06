@@ -268,18 +268,22 @@ io.on('connection', function(socket) {
       timeout = setTimeout(function () {
         oidc.refresh(tokenSet.refresh_token)
         .then(function (ts) {
+          console.log("new token "+ts);
           tokenSet = ts;
           refreshToken();
         })
         .catch(function(error) {
-          unauthAccess()
+          console.log(error);
+          unauthAccess();
         });
       }, expires_in * 1000);
+      console.log("token expires in "+expires_in+" seconds");
     }
   };
 
   var unauthAccess = function() {
     req.session.user = null;
+    req.session.tokenSet = null;
     req.session.save();
     socket.emit('error:auth', 'Unauthorized Access');
   };
@@ -288,7 +292,16 @@ io.on('connection', function(socket) {
     if(userObj && userObj === req.session.user) return true;
     userObj = req.session.user;
     tokenSet = req.session.tokenSet;
-    refreshToken();
+    if(tokenSet) {
+      oidc.introspect(tokenSet.access_token)
+      .then(function(result) {
+        refreshToken();
+      })
+      .catch(function(error) {
+        console.log(error);
+        unauthAccess();
+      });
+    }
     profile = req.session.profile;
     if(userObj) setListeners();
     return !!userObj;
@@ -432,6 +445,79 @@ io.on('connection', function(socket) {
     socket.emit('userName:set', profile.name);
   });
 
+  socket.on('get:folder:first', function(cb) {
+    if(!isLoggedIn()) return unauthAccess();
+    schema.get(req, 'FolderInterface')
+    .first()
+    .then(function(fi) {
+      var options = {
+        url: '/',
+        qs: {
+          objInterface: fi._id,
+          _id: {$in: userObj.user.rootFolder}
+        },
+        method: 'GET'
+      };
+      return bkRequest(options);
+    })
+    .then(function(folders) {
+      return folders.length&&folders[0];
+    })
+    .nodeify(cb);
+  });
+
+  socket.on('get:folder:parents', function(id, cb) {
+    if(!isLoggedIn()) return unauthAccess();
+    schema.get(req, 'FolderInterface')
+    .first()
+    .then(function(fi) {
+      var options = {
+        url: '/',
+        qs: {
+          objInterface: fi._id,
+          _id: id
+        },
+        method: 'GET'
+      };
+      bkRequest(options)
+      .then(function(folders) {
+        if(!folders.length) return Promise.resolve();
+        var instance = folders[0];
+        if(!instance.folder.objLinks||!instance.folder.objLinks.length) return instance;
+        var options = {
+          url: '/',
+          qs: {
+            objInterface: fi._id,
+            _id: {$in: instance.folder.objLinks}
+          },
+          method: 'GET'
+        };
+        return bkRequest(options)
+        .then(function(subFolders) {
+          instance.folder.objLinks = subFolders;
+          return instance;
+        });
+      })
+      .then(function(instance) {
+        if(userObj.user.rootFolder.indexOf(instance._id)!==-1) return instance;
+        var options = {
+          url: '/',
+          qs: {
+            objInterface: fi._id,
+            "folder.objLinks": id
+          },
+          method: 'GET'
+        };
+        return bkRequest(options)
+        .then(function(parents) {
+          instance.parents = parents;
+          return instance;
+        });
+      })
+      .nodeify(cb);
+    });
+  });
+
   socket.on('get:folder', function(id, cb) {
     if(!isLoggedIn()) return unauthAccess();
     if(!cb && typeof id == 'function') {
@@ -471,7 +557,7 @@ io.on('connection', function(socket) {
             };
             bkRequest(options)
             .then(function(subFolders) {
-              instance.subFolders = subFolders;
+              instance.folder.objLinks = subFolders;
               resolve(instance);
             })
             .catch(reject);

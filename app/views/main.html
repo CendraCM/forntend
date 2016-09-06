@@ -1,12 +1,15 @@
-<div layout="row" layout-wrap layout-margin layout-padding>
+<div layout="row" layout-wrap layout-margin>
   <div ng-if="!vm.documents.length">No se han encontrado elementos</div>
-  <div ng-repeat="document in vm.documents" flex="20" ng-click="vm.select(document._id)" layout="column" layout-align="center stretch" layout-padding>
-    <div layout="column"  ng-if="document.objInterface.indexOf(vm.fiID) === -1" layout-align="center center" class="document">
+  <div ng-repeat="document in vm.documents" class="folder-content" flex="20" ng-click="vm.select(document)" layout="column" layout-align="center stretch" layout-padding>
+    <div layout="column" class="document" ng-if="document.objInterface.indexOf(vm.fiID) === -1" layout-align="center center" class="document">
       <md-icon>insert_drive_file</md-icon>
       <div>{{document.objName}}</div>
     </div>
-    <div md-whiteframe="2" ng-if="document.objInterface.indexOf(vm.fiID) !== -1" layout-align="center center" layout="column" class="folder">
-      {{document.objName}}
+    <div class="folder" md-whiteframe="2" ng-if="document.objInterface.indexOf(vm.fiID) !== -1" layout-align="start center" layout="row" class="folder">
+      <div class="icon-wrapper">
+        <md-icon>folder</md-icon>
+      </div>
+      <span flex>{{document.objName}}</span>
     </div>
   </div>
 </div>

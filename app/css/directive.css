@@ -1,8 +1,8 @@
-cd-tree {
+/*cd-tree {
   margin-left: 8px !important;
-}
+}*/
 
-cd-tree .no-child {
+cd-tree .space   {
   width: 24px;
 }
 
@@ -10,8 +10,12 @@ cd-tree > md-list {
   padding: 0px;
 }
 
+cd-tree > md-list > md-list-item {
+  padding: 0px !important;
+}
+
 cd-tree > md-list > md-list-item > .cd-button {
-  margin: 0px 8px;
+  margin: 0px;
   min-height: 48px;
   position: relative;
   outline: none;
@@ -22,5 +26,26 @@ cd-tree > md-list > md-list-item > .cd-button.selected {
 }
 
 cd-tree > md-list > md-list-item > .cd-button.selected > .folder {
-  color: #4285f4;
+  color: rgb(63,81,181);
+}
+
+cd-tree > md-list > md-list-item > .cd-button:hover {
+  background-color: #cAcAcA;
+}
+
+.document {
+  cursor: pointer;
+}
+
+.folder-content .folder {
+  padding: 0px;
+}
+
+.folder-content .folder md-icon {
+  margin: 8px;
+}
+
+.folder-content .folder .icon-wrapper {
+  background-color: #ccc;
+  margin-right: 8px;
 }
