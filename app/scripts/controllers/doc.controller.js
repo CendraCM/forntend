@@ -2,9 +2,9 @@
 'use strict';
 
 angular.module('cendra')
-.controller('DocController', function($scope, document, schema, $state, $stateParams) {
+.controller('DocController', function($scope, io, $state, $stateParams) {
   var vm = this;
-  if($stateParams.id) {
+  /*if($stateParams.id) {
     document.get($stateParams).$promise.then(function(doc) {
       delete doc.$promise;
       delete doc.$resolved;
@@ -73,7 +73,7 @@ angular.module('cendra')
       "body"
     ],
     "_id": "56fc34da09a98486535f030f"
-  };
+  };*/
 
   /*vm.schema = {
     title: 'New Document',
