@@ -30,7 +30,7 @@ cd-tree > md-list > md-list-item > .cd-button.selected > .folder {
 }
 
 cd-tree > md-list > md-list-item > .cd-button:hover {
-  background-color: #cAcAcA;
+  background-color: rgba(158,158,158,0.2);
 }
 
 .document {
