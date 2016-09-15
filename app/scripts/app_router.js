@@ -4,6 +4,12 @@
   angular.module('cendra')
   .config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider) {
     $stateProvider
+    .state('notUser', {
+      url: '/notUser',
+      templateUrl: 'views/notUser.html',
+      controller: 'NotUserController',
+      controllerAs: 'vm'
+    })
     .state('root', {
       templateUrl: 'views/root.html',
       controller: 'RootController',
@@ -19,12 +25,6 @@
       url: '/document/:id',
       templateUrl: 'views/doc.html',
       controller: 'DocController',
-      controllerAs: 'vm'
-    })
-    .state('notUser', {
-      url: '/notUser',
-      templateUrl: 'views/notUser.html',
-      controller: 'NotUserController',
       controllerAs: 'vm'
     });
 

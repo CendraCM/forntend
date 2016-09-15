@@ -10,6 +10,7 @@
     'formlyMaterialTemplate',*/
     'cendra.builder',
     'formly',
-    'formlyMaterial'
+    'formlyMaterial',
+    'binary.plugin'
   ]);
 })();

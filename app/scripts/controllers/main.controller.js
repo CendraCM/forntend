@@ -6,6 +6,7 @@ angular.module('cendra')
   var vm = this;
   vm.documents = vm.documents||[];
   vm.fiID = null;
+  io.emit('get:userName');
   io.emit('get:schema:named', 'FolderInterface', function(err, fi) {
     if(fi) vm.fiID = fi._id;
   });

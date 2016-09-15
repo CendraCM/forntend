@@ -616,6 +616,10 @@ io.on('connection', function(socket) {
 
   socket.on('list:schema', function(filter, cb) {
     if(!isLoggedIn()) return unauthAccess();
+    if(!cb && typeof filter == 'function') {
+      cb = filter;
+      filter = {};
+    }
     schema.get(req, filter)
     .nodeify(cb);
   });

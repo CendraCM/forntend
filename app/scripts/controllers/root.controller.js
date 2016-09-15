@@ -7,8 +7,6 @@ angular.module('cendra')
 
   vm.folders = [];
 
-  io.emit('get:userName');
-
   if($location.path() == '/') {
     io.emit('get:folder:first', function(error, first) {
       if($location.path() == '/') return vm.select(first);
