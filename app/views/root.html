@@ -2,33 +2,33 @@
 <md-sidenav md-component-id="menu" class="md-sidenav-left md-whiteframe-z2" md-is-locked-open="true">
   <md-content layout="column">
     <md-menu-bar layout="column" layout-align="center center">
-    <md-menu>
-      <md-button class="md-primary md-raised" ng-click="$mdOpenMenu($event)">
-        Nuevo
-      </md-button>
-      <md-menu-content>
-        <md-menu-item>
-          <md-button ui-sref="root.document">
-            <md-icon>note_add</md-icon>
-            Documento
-          </md-button>
-        </md-menu-item>
-        <md-menu-item>
-          <md-button>
-            <md-icon>create_new_folder</md-icon>
-            Carpeta
-          </md-button>
-        </md-menu-item>
-        <md-menu-divider></md-menu-divider>
-        <md-menu-item>
-          <md-button>
-            <md-icon>library_add</md-icon>
-            Tipo Documental
-          </md-button>
-        </md-menu-item>
-      </md-menu-content>
-    </md-menu>
-  </md-menu-bar>
+      <md-menu>
+        <md-button class="md-primary md-raised" ng-click="$mdOpenMenu($event)">
+          Nuevo
+        </md-button>
+        <md-menu-content>
+          <md-menu-item>
+            <md-button ui-sref="root.document">
+              <md-icon>note_add</md-icon>
+              Documento
+            </md-button>
+          </md-menu-item>
+          <md-menu-item>
+            <md-button>
+              <md-icon>create_new_folder</md-icon>
+              Carpeta
+            </md-button>
+          </md-menu-item>
+          <md-menu-divider></md-menu-divider>
+          <md-menu-item>
+            <md-button>
+              <md-icon>library_add</md-icon>
+              Tipo Documental
+            </md-button>
+          </md-menu-item>
+        </md-menu-content>
+      </md-menu>
+    </md-menu-bar>
     <cd-tree ng-model="vm.folders" label-key="objName" child-key="subFolders" select="vm.select(item)" selected-item="vm.selectedItem" expand="vm.expand(item)"></cd-tree>
   </md-content>
 </md-sidenav>
