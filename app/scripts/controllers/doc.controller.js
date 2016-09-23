@@ -2,7 +2,7 @@
 'use strict';
 
 angular.module('cendra')
-.controller('DocController', function($scope, io, $state, $stateParams) {
+.controller('DocController', function($scope, io, $state, $stateParams, $q) {
   var vm = this;
 
   io.emit('list:schema', function(err, interfaces) {
@@ -17,6 +17,22 @@ angular.module('cendra')
     }
     $state.go('root');
   }
+
+  vm.search = function(filter, one) {
+    return $q(function(resolve, reject) {
+      if(one) {
+        io.emit('get:document', filter, function(err, doc) {
+          if(err) return reject(err);
+          resolve(doc);
+        });
+      } else {
+        io.emit('list:document', filter, function(err, list) {
+          if(err) return reject(err);
+          resolve(list);
+        });
+      }
+    });
+  };
 
 /*  vm.document = {
     item: 'algo',

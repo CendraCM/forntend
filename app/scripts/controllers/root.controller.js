@@ -9,8 +9,15 @@ angular.module('cendra')
 
   if($location.path() == '/') {
     io.emit('get:folder:first', function(error, first) {
-      if($location.path() == '/') return vm.select(first);
+       vm.select(first);
     });
+  } else {
+    var $m = $location.path().match(/^\/(\w*)/);
+    if($m[1]=='document') {
+      io.emit('get:folder', function(error, folders) {
+        vm.folders = folders;
+      });
+    }
   }
 
   var findFolder = function(folders, elem, replace) {
