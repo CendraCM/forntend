@@ -402,7 +402,10 @@ io.on('connection', function(socket) {
     var options = {
       url: '/',
       json: doc,
-      method: 'POST'
+      method: 'POST',
+      headers: {
+        authorization: 'Bearer '+tokenSet.access_token
+      }
     };
     bkRequest(options, cb);
   });
@@ -412,7 +415,10 @@ io.on('connection', function(socket) {
     var options = {
       url: '/'+id,
       json: doc,
-      method: 'PUT'
+      method: 'PUT',
+      headers: {
+        authorization: 'Bearer '+tokenSet.access_token
+      }
     };
     bkRequest(options, cb);
   });
@@ -421,7 +427,10 @@ io.on('connection', function(socket) {
     if(!isLoggedIn()) return unauthAccess();
     var options = {
       url: '/'+id,
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: {
+        authorization: 'Bearer '+tokenSet.access_token
+      }
     };
     bkRequest(options, cb);
   });
@@ -516,6 +525,49 @@ io.on('connection', function(socket) {
       })
       .nodeify(cb);
     });
+  });
+
+  socket.on('add:folder:link', function(item, id, cb) {
+    if(!isLoggedIn()) return unauthAccess();
+    var p;
+    if(!item) {
+      p = schema.get(req, 'FolderInterface')
+      .first()
+      .then(function(fi) {
+        var options = {
+          url: '/',
+          qs: {
+            objInterface: fi._id,
+            _id: {$in: userObj.user.rootFolder}
+          },
+          method: 'GET'
+        };
+        return bkRequest(options);
+      })
+      .then(function(folders) {
+        return folders.length&&folders[0];
+      });
+    } else {
+      p = bkRequest({
+        url: '/'+item._id,
+        method: 'GET'
+      });
+    }
+    p.then(function(instance) {
+      instance.folder.objLinks.push(id);
+      var _id = instance._id;
+      delete instance._id;
+      var options = {
+        url: '/'+_id,
+        json: instance,
+        method: 'PUT',
+        headers: {
+          authorization: 'Bearer '+tokenSet.access_token
+        }
+      };
+      return bkRequest(options);
+    })
+    .nodeify(cb);
   });
 
   socket.on('get:folder', function(id, cb) {
@@ -642,7 +694,10 @@ io.on('connection', function(socket) {
     var options = {
       url: '/schema',
       json: sch,
-      method: 'POST'
+      method: 'POST',
+      headers: {
+        authorization: 'Bearer '+tokenSet.access_token
+      }
     };
     bkRequest(options, cb);
   });

@@ -67,6 +67,10 @@ angular.module('cendra')
     }
   });
 
+  $scope.$on('cd:addToFolder', function($event, doc) {
+    io.emit('add:folder:link', vm.selectedItem, doc._id);
+  });
+
   vm.expand = function(item, cb) {
     if(item.subFolders && item.subFolders.length) {
       item.subFolders.forEach(function(sub, i) {
