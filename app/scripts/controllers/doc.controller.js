@@ -7,6 +7,13 @@ angular.module('cendra')
 
   vm.document = {};
 
+  if($stateParams.id) {
+    io.emit('get:document', $stateParams.id, function(err, doc) {
+      if(err) return $mdToast.showSimple(err);
+      vm.document = doc;
+    });
+  }
+
   io.emit('list:schema', function(err, interfaces) {
     vm.interfaces = interfaces;
   });
