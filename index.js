@@ -17,6 +17,8 @@ var oidc = new yuliIssuer.Client(config.creds);
 
 var defaultRequest = request.defaults({baseUrl: config.backend});
 
+var sysHeader = 'Basic '+(new Buffer(config.system.user+':'+config.system.pass).toString('base64'));
+
 app.get('/test', function(req, res, next) {
   res.send('Ok');
 });
@@ -30,6 +32,11 @@ var schema = {
   id: function(id) {
     var r = this.extended?this:extend({extended: true}, this);
     r.schId = id;
+    return r;
+  },
+  imp: function() {
+    var r = this.extended?this:extend({extended: true}, this);
+    r.schId = 'implementable';
     return r;
   },
   get: function(req, filter) {
@@ -66,6 +73,23 @@ var schema = {
     });
 
     return r;
+  },
+  listable: function() {
+    this.promise = this.promise.then(function(result) {
+      var isListable = function(document) {
+        return document.objTag&&document.objTag.indexOf('listable')!==-1;
+      };
+      if(result.objName) return isListable(result)?result:null;
+      if(!Array.isArray(result)) {
+        var r = {};
+        for(var i in result) {
+          if(isListable(result[i])) r[i] = result[i];
+        }
+        return r;
+      }
+      return result.filter(isListable);
+    });
+    return this;
   },
   obj: function() {
     this.promise = this.promise.then(function(result) {
@@ -246,9 +270,15 @@ io.on('connection', function(socket) {
           socket.emit('document:inserted', doc);
         });
         queue.on(prefix+':update:document', function(doc) {
+          if(userObj._id == doc._id) userObj = doc;
           socket.emit('document:updated', doc);
         });
         queue.on(prefix+':delete:document', function(doc) {
+          if(userObj._id == doc._id) {
+            userObj=null;
+            unauthAccess();
+            return socket.disconnect();
+          }
           socket.emit('document:deleted', doc);
         });
       });
@@ -382,7 +412,7 @@ io.on('connection', function(socket) {
           }
         },
         headers: {
-          authorization: 'Bearer '+tokenSet.access_token
+          authorization: sysHeader
         }
       };
       bkRequest(options, function(err, user) {
@@ -676,16 +706,29 @@ io.on('connection', function(socket) {
     .nodeify(cb);
   });
 
+  socket.on('list:schema:imp', function(filter, cb) {
+    if(!isLoggedIn()) return unauthAccess();
+    if(!cb && typeof filter == 'function') {
+      cb = filter;
+      filter = {};
+    }
+    schema.imp().get(req, filter)
+    .nodeify(cb);
+  });
+
+
   socket.on('get:schema', function(id, cb) {
     if(!isLoggedIn()) return unauthAccess();
     schema.id(id)
     .get(req)
+    .listable()
     .nodeify(cb);
   });
 
   socket.on('get:schema:named', function(name, cb) {
     if(!isLoggedIn()) return unauthAccess();
     schema.get(req, name)
+    .listable()
     .nodeify(cb);
   });
 

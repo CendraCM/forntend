@@ -18,6 +18,10 @@ angular.module('cendra')
     vm.interfaces = interfaces;
   });
 
+  io.emit('list:schema:imp', function(err, interfaces) {
+    vm.implementable = interfaces;
+  });
+
   vm.done = function(canceled, doc) {
     if(!canceled) {
       if(!doc) {
