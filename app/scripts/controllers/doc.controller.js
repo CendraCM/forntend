@@ -2,7 +2,7 @@
 'use strict';
 
 angular.module('cendra')
-.controller('DocController', function($scope, io, $state, $stateParams, $q, $mdToast) {
+.controller('DocController', function($scope, io, $state, $stateParams, $q, $mdToast, $mdDialog) {
   var vm = this;
 
   vm.document = {};
@@ -12,6 +12,17 @@ angular.module('cendra')
       if(err) return $mdToast.showSimple(err);
       vm.document = doc;
     });
+  } else {
+    var prompt = $mdDialog.prompt()
+      .title("Título del Documento")
+      .placeholder("Título")
+      .initialValue("Sin Título")
+      .ok("Aceptar")
+      .cancel("Calcelar");
+    $mdDialog.show(prompt)
+      .then(function(name) {
+        vm.document = {objName: name};
+      });
   }
 
   io.emit('list:schema', function(err, interfaces) {

@@ -2,10 +2,9 @@
 'use strict';
 
   angular.module('cendra')
-  .controller('GeneralController', ['io', function(io) {
-    var vm = this;
+  .controller('GeneralController', ['io', '$scope', function(io, $scope) {
     io.on('userName:set', function(name) {
-      vm.name = name;
+      $scope.name = name;
     });
   }]);
 })();

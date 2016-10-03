@@ -3,7 +3,7 @@
   <div ng-if="vm.folders.length" layout="column">
     <h4>Carpetas</h4>
     <div layout="row">
-      <div ng-repeat="folder in vm.folders" class="folder-content" flex="20" ng-click="vm.select(folder)" layout="column" layout-align="center stretch" layout-padding>
+      <div ng-repeat="folder in vm.folders" class="folder-content" flex="20" ng-click="vm.info(folder)" ng-dblclick="vm.select(folder)" layout="column" layout-align="center stretch" layout-padding>
         <div class="folder" md-whiteframe="2" layout-align="start center" layout="row">
           <div class="icon-wrapper">
             <md-icon>folder</md-icon>
@@ -16,7 +16,7 @@
   <div ng-if="vm.documents.length" layout="column">
     <h4>Documentos</h4>
     <div layout="row" layout-align="start start">
-      <div ng-repeat="document in vm.documents" class="folder-content" flex="20" ng-click="vm.select(document)" layout="column" layout-align="center stretch" layout-padding>
+      <div ng-repeat="document in vm.documents" class="folder-content" flex="20" ng-click="vm.info(document)" ng-dblclick="vm.select(document)" layout="column" layout-align="center stretch" layout-padding>
         <div layout="column" class="document" layout-align="center center">
           <md-icon>insert_drive_file</md-icon>
           <div>{{document.objName}}</div>
