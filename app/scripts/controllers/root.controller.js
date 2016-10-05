@@ -2,7 +2,7 @@
 'use strict';
 
 angular.module('cendra')
-.controller('RootController', ['$scope', 'io', '$state', '$location', function($scope, io, $state, $location) {
+.controller('RootController', ['$scope', 'io', '$state', '$location', '$mdDialog', '$q', function($scope, io, $state, $location, $mdDialog, $q) {
   var vm = this;
 
   vm.folders = [];
@@ -86,6 +86,46 @@ angular.module('cendra')
     if(item) $state.go('root.main', {id: item._id});
   };
 
+  vm.createFolder = function(){
+    var prompt = $mdDialog.prompt()
+      .title("Nueva Carpeta")
+      .ok("Crear")
+      .cancel("Cancelar");
+    $mdDialog.show(prompt)
+    .then(function(folderName) {
+      return $q(function(resolve, reject) {
+        io.emit('get:schema:named', 'FolderInterface', function(err, iface) {
+          if(err) return reject(err);
+          resolve({objName: folderName, objInterface: [iface._id]});
+        });
+      });
+    })
+    .then(function(nd) {
+      return $q(function(resolve, reject) {
+        io.emit('insert:document', nd, function(err, doc) {
+          if(err) return reject(err);
+          resolve(doc);
+        });
+      });
+    })
+    .then(function(doc) {
+      return $q(function(resolve, reject) {
+        var item = angular.merge({}, vm.selectedItem);
+        if(!item.folder.objLinks) item.folder.objLinks = [];
+        item.folder.objLinks.push(doc._id);
+        io.emit('update:document', item._id, item, function(err, updated) {
+          if(err) return reject(err);
+          $scope.$apply(function() {
+            vm.selectedItem = updated;
+          });
+          resolve();
+        });
+      });
+    })
+    .catch(function(err) {
+      $mdToast.showSimple(err);
+    });
+  }
 }]);
 
 })();
