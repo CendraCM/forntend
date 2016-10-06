@@ -93,39 +93,44 @@ angular.module('cendra')
       .cancel("Cancelar");
     $mdDialog.show(prompt)
     .then(function(folderName) {
-      return $q(function(resolve, reject) {
-        io.emit('get:schema:named', 'FolderInterface', function(err, iface) {
-          if(err) return reject(err);
-          resolve({objName: folderName, objInterface: [iface._id]});
-        });
-      });
-    })
-    .then(function(nd) {
-      return $q(function(resolve, reject) {
-        io.emit('insert:document', nd, function(err, doc) {
-          if(err) return reject(err);
-          resolve(doc);
-        });
-      });
-    })
-    .then(function(doc) {
-      return $q(function(resolve, reject) {
-        var item = angular.merge({}, vm.selectedItem);
-        if(!item.folder.objLinks) item.folder.objLinks = [];
-        item.folder.objLinks.push(doc._id);
-        io.emit('update:document', item._id, item, function(err, updated) {
-          if(err) return reject(err);
-          $scope.$apply(function() {
-            vm.selectedItem = updated;
+      return $q.all([
+        $q(function(resolve, reject) {
+          io.emit('get:schema:named', 'FolderInterface', function(err, iface) {
+            if(err) return reject(err);
+            resolve({objName: folderName, objInterface: [iface._id]});
           });
-          resolve();
+        })
+        .then(function(nd) {
+          return $q(function(resolve, reject) {
+            io.emit('insert:document', nd, function(err, doc) {
+              if(err) return reject(err);
+              resolve(doc);
+            });
+          });
+        }),
+        $q(function(resolve, reject) {
+          io.emit('get:document', vm.selectedItem._id, function(err, doc) {
+            if(err) return reject(err);
+            resolve(doc);
+          });
+        })
+      ]);
+    })
+    .then(function(all) {
+      var doc = all[1];
+      var subFolder = all[0];
+      doc.folder.objLinks.push(subFolder._id);
+      return $q(function(resolve, reject) {
+        io.emit('update:document', doc._id, doc, function(err, updated) {
+          if(err) return reject(err);
+          resolve(updated);
         });
       });
     })
     .catch(function(err) {
       $mdToast.showSimple(err);
     });
-  }
+  };
 }]);
 
 })();

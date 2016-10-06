@@ -6,30 +6,23 @@ cd-tree .space   {
   width: 24px;
 }
 
-cd-tree > md-list {
-  padding: 0px;
-}
 
-cd-tree > md-list > md-list-item {
-  padding: 0px !important;
-}
-
-cd-tree > md-list > md-list-item > .cd-button {
+cd-tree .cd-button {
   margin: 0px;
   min-height: 48px;
   position: relative;
   outline: none;
 }
 
-cd-tree > md-list > md-list-item > .cd-button.selected {
+cd-tree .cd-button.selected {
   font-weight: bolder;
 }
 
-cd-tree > md-list > md-list-item > .cd-button.selected > .folder {
+cd-tree .cd-button.selected > .folder {
   color: rgb(63,81,181);
 }
 
-cd-tree > md-list > md-list-item > .cd-button:hover {
+cd-tree .cd-button:hover {
   background-color: rgba(158,158,158,0.2);
 }
 

@@ -267,11 +267,11 @@ io.on('connection', function(socket) {
       groups.forEach(function(group) {
         var prefix = group.rootGroup?'root':group._id;
         queue.on(prefix+':insert:document', function(doc) {
-          socket.emit('document:inserted', doc);
+          socket.emit('document:inserted:'+doc._id, doc);
         });
         queue.on(prefix+':update:document', function(doc) {
           if(userObj._id == doc._id) userObj = doc;
-          socket.emit('document:updated', doc);
+          socket.emit('document:updated:'+doc._id, doc);
         });
         queue.on(prefix+':delete:document', function(doc) {
           if(userObj._id == doc._id) {
@@ -279,7 +279,7 @@ io.on('connection', function(socket) {
             unauthAccess();
             return socket.disconnect();
           }
-          socket.emit('document:deleted', doc);
+          socket.emit('document:deleted:'+doc._id, doc);
         });
       });
     });
@@ -728,7 +728,6 @@ io.on('connection', function(socket) {
   socket.on('get:schema:named', function(name, cb) {
     if(!isLoggedIn()) return unauthAccess();
     schema.get(req, name)
-    .listable()
     .nodeify(cb);
   });
 

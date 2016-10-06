@@ -29,6 +29,10 @@
           };
         }
         socket.on.apply(socket, arguments);
+        var args = arguments;
+        return function() {
+          socket.off.apply(socket, args);
+        };
       },
       emit: function() {
         var last = arguments[arguments.length -1];
@@ -41,6 +45,17 @@
           };
         }
         socket.emit.apply(socket, arguments);
+      }
+    };
+  }])
+  .factory('user', ['io', function(io) {
+    var userVar;
+    io.emit('get:user', function(error, user) {
+      userVar = user;
+    });
+    return {
+      get: function() {
+        return userVar;
       }
     };
   }]);

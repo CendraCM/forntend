@@ -21,8 +21,11 @@ angular.module('cendra')
       .cancel("Calcelar");
     $mdDialog.show(prompt)
       .then(function(name) {
-        vm.document = {objName: name};
+        vm.document.objName = name;
       });
+    io.emit('get:personalGroup', function(error, group) {
+
+    });
   }
 
   io.emit('list:schema', function(err, interfaces) {
