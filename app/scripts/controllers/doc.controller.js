@@ -2,7 +2,7 @@
 'use strict';
 
 angular.module('cendra')
-.controller('DocController', function($scope, io, $state, $stateParams, $q, $mdToast, $mdDialog) {
+.controller('DocController', function($scope, io, $state, $stateParams, $q, $mdToast, $mdDialog, $window) {
   var vm = this;
 
   vm.document = {};
@@ -22,6 +22,9 @@ angular.module('cendra')
     $mdDialog.show(prompt)
       .then(function(name) {
         vm.document.objName = name;
+      })
+      .catch(function(){
+        $window.history.back();
       });
     io.emit('get:personalGroup', function(error, groups) {
       vm.document.objSecurity = vm.document.objSecurity||{};
