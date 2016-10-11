@@ -427,6 +427,25 @@ io.on('connection', function(socket) {
     });
   });
 
+  socket.on('get:personalGroup', function(cb) {
+   if(!isLoggedIn()) return unauthAccess();
+   schema.get(req, 'GroupInterface')
+   .first()
+   .then(function(gi) {
+     var options = {
+       url: '/',
+       qs: {
+         objInterface: gi._id,
+         "group.objLinks": userObj._id,
+         "group.personalGroup": true
+       },
+       method: 'GET'
+     };
+     return bkRequest(options);
+   })
+   .nodeify(cb);
+  });
+
   socket.on('insert:document', function(doc, cb) {
     if(!isLoggedIn()) return unauthAccess();
     var options = {

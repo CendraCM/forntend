@@ -14,18 +14,21 @@ angular.module('cendra')
 
   if($stateParams.id) {
     $rootScope.$broadcast('cd:folder', $stateParams.id);
-
-    io.emit('get:folder:contents', $stateParams.id, function(error, contents) {
-      vm.documents = [];
-      vm.folders = [];
-      contents.forEach(function(content) {
-        if(!content.objInterface||content.objInterface.indexOf(vm.fiID) === -1) {
-          vm.documents.push(content);
-        } else {
-          vm.folders.push(content);
-        }
-      })
-    });
+    var getContents = function() {
+      io.emit('get:folder:contents', $stateParams.id, function(error, contents) {
+        vm.documents = [];
+        vm.folders = [];
+        contents.forEach(function(content) {
+          if(!content.objInterface||content.objInterface.indexOf(vm.fiID) === -1) {
+            vm.documents.push(content);
+          } else {
+            vm.folders.push(content);
+          }
+        })
+      });
+    }
+    getContents();
+    io.on('document:updated:'+$stateParams.id, getContents);
   }
 
   vm.select = function(document) {

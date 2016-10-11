@@ -23,8 +23,14 @@ angular.module('cendra')
       .then(function(name) {
         vm.document.objName = name;
       });
-    io.emit('get:personalGroup', function(error, group) {
-
+    io.emit('get:personalGroup', function(error, groups) {
+      vm.document.objSecurity = vm.document.objSecurity||{};
+      vm.document.objSecurity.owner = vm.document.objSecurity.owner||[];
+      groups.forEach(function(group) {
+        if(!vm.document.objSecurity.owner.includes(group._id)) {
+          vm.document.objSecurity.owner.push(group._id);
+        }
+      });
     });
   }
 
