@@ -24,9 +24,9 @@ angular.module('cendra')
           } else {
             vm.folders.push(content);
           }
-        })
+        });
       });
-    }
+    };
     getContents();
     io.on('document:updated:'+$stateParams.id, getContents);
   }
@@ -34,6 +34,11 @@ angular.module('cendra')
   vm.select = function(document) {
     if(!document.objInterface||document.objInterface.indexOf(vm.fiID) === -1) $state.go('root.document', {id: document._id});
     else $state.go('root.main', {id: document._id});
+  };
+
+  vm.info = function($event, document) {
+    $event.stopPropagation();
+    $rootScope.$broadcast('cd:info', document);
   };
 }]);
 

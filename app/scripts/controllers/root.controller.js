@@ -2,7 +2,7 @@
 'use strict';
 
 angular.module('cendra')
-.controller('RootController', ['$scope', 'io', '$state', '$location', '$mdDialog', '$q', function($scope, io, $state, $location, $mdDialog, $q) {
+.controller('RootController', ['$scope', 'io', '$state', '$location', '$mdDialog', '$q', '$mdSidenav', function($scope, io, $state, $location, $mdDialog, $q, $mdSidenav) {
   var vm = this;
 
   vm.folders = [];
@@ -69,6 +69,13 @@ angular.module('cendra')
 
   $scope.$on('cd:addToFolder', function($event, doc) {
     io.emit('add:folder:link', vm.selectedItem, doc._id);
+  });
+
+
+  $scope.$on('cd:info', function($event, doc) {
+    $scope.selectedInfoDoc = doc;
+    if(doc) $mdSidenav('info').open();
+    else $mdSidenav('info').close();
   });
 
   vm.expand = function(item, cb) {
