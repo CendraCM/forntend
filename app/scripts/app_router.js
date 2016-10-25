@@ -26,6 +26,12 @@
       templateUrl: 'views/doc.html',
       controller: 'DocController',
       controllerAs: 'vm'
+    })
+    .state('root.schema', {
+      url: '/type/:id',
+      templateUrl: 'views/type.html',
+      controller: 'TypeController',
+      controllerAs: 'vm'
     });
 
     $urlRouterProvider.otherwise('/');

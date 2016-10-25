@@ -7,18 +7,22 @@ angular.module('cendra')
 
   vm.folders = [];
 
-  if($location.path() == '/') {
-    io.emit('get:folder:first', function(error, first) {
-       vm.select(first);
-    });
-  } else {
-    var $m = $location.path().match(/^\/(\w*)/);
-    if($m[1]=='document') {
+  var getFolders = function() {
+    if($location.path() == '/') {
+      io.emit('get:folder:first', function(error, first) {
+         vm.select(first);
+      });
+    } else if(/^\/document/.test($location.path())) {
       io.emit('get:folder', function(error, folders) {
         vm.folders = folders;
       });
     }
-  }
+  };
+
+  getFolders();
+
+  $scope.$on('$locationChangeSuccess', getFolders);
+
 
   var findFolder = function(folders, elem, replace) {
     var id = elem._id||elem;
@@ -74,8 +78,8 @@ angular.module('cendra')
 
   $scope.$on('cd:info', function($event, doc) {
     $scope.selectedInfoDoc = doc;
-    if(doc) $mdSidenav('info').open();
-    else $mdSidenav('info').close();
+    if(doc) $q.resolve($mdSidenav('info', true)).then(function(instance) { instance.open(); });
+    else $q.resolve($mdSidenav('info', true)).then(function(instance) { instance.close(); });
   });
 
   vm.expand = function(item, cb) {

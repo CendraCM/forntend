@@ -2,8 +2,10 @@
 'use strict';
 
 angular.module('cendra')
-.controller('DocController', function($scope, io, $state, $stateParams, $q, $mdToast, $mdDialog, $window) {
+.controller('DocController', function($scope, $rootScope, io, $state, $stateParams, $q, $mdToast, $mdDialog, $window) {
   var vm = this;
+
+  $rootScope.$broadcast('cd:info');
 
   vm.document = {};
 
