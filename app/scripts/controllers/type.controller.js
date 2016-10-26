@@ -16,7 +16,7 @@ angular.module('cendra')
     });
   } else {
     var prompt = $mdDialog.prompt()
-      .title("Título del Documento")
+      .title("Título del Tipo Documental")
       .placeholder("Título")
       .initialValue("Sin Título")
       .ok("Aceptar")
