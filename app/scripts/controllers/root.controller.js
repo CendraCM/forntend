@@ -12,7 +12,7 @@ angular.module('cendra')
       io.emit('get:folder:first', function(error, first) {
          vm.select(first);
       });
-    } else if(/^\/document/.test($location.path())) {
+    } else if(/^\/(document|type)/.test($location.path())) {
       io.emit('get:folder', function(error, folders) {
         vm.folders = folders;
       });
