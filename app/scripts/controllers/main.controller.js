@@ -32,12 +32,18 @@ angular.module('cendra')
   }
 
   vm.select = function(document) {
+    vm.selected = document;
     if(!document.objInterface||document.objInterface.indexOf(vm.fiID) === -1) $state.go('root.document', {id: document._id});
     else $state.go('root.main', {id: document._id});
   };
 
+  vm.getSelected = function() {
+    return vm.selected;
+  };
+
   vm.info = function($event, document) {
     $event.stopPropagation();
+    vm.selected = document;
     $rootScope.$broadcast('cd:info', document);
   };
 }]);

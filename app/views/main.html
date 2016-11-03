@@ -4,9 +4,9 @@
     <h4>Carpetas</h4>
     <div layout="row">
       <div ng-repeat="folder in vm.folders" class="folder-content" flex="20" ng-click="vm.info($event, folder)" ng-dblclick="vm.select(folder)" layout="column" layout-align="center stretch" layout-padding>
-        <div class="folder" md-whiteframe="2" layout-align="start center" layout="row">
+        <div class="folder" md-whiteframe="2" layout-align="start center" layout="row" md-colors="{color: vm.selected == folder?'primary-700':'grey-800', background: vm.selected == folder?'primary-200-0.2':'background'}">
           <div class="icon-wrapper">
-            <md-icon>folder</md-icon>
+            <md-icon md-colors="{color: vm.selected == folder?'primary-700':'grey-800'}">folder</md-icon>
           </div>
           <span flex>{{folder.objName}}</span>
         </div>
@@ -17,8 +17,8 @@
     <h4>Documentos</h4>
     <div layout="row" layout-align="start start">
       <div ng-repeat="document in vm.documents" class="folder-content" flex="20" ng-click="vm.info($event, document)" ng-dblclick="vm.select(document)" layout="column" layout-align="center stretch" layout-padding>
-        <div layout="column" class="document" layout-align="center center">
-          <md-icon>insert_drive_file</md-icon>
+        <div layout="column" class="document" md-colors="{color: vm.selected == document?'primary-700':'grey-800', background: vm.selected == document?'primary-200-0.2':'background'}" md-whiteframe="2" layout-align="center center">
+          <md-icon md-colors="{color: vm.selected == document?'primary-700':'grey-800'}">insert_drive_file</md-icon>
           <div>{{document.objName}}</div>
         </div>
       </div>
