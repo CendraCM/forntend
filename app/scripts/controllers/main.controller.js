@@ -13,6 +13,10 @@ angular.module('cendra')
   });
 
   if($stateParams.id) {
+    io.emit('get:document', $stateParams.id, function(err, doc) {
+      vm.currentFolder = doc;
+      vm.select(null, vm.currentFolder);
+    });
     $rootScope.$broadcast('cd:folder', $stateParams.id);
     var getContents = function() {
       io.emit('get:folder:contents', $stateParams.id, function(error, contents) {
@@ -31,7 +35,7 @@ angular.module('cendra')
     io.on('document:updated:'+$stateParams.id, getContents);
   }
 
-  vm.select = function(document) {
+  vm.go = function(document) {
     vm.selected = document;
     if(!document.objInterface||document.objInterface.indexOf(vm.fiID) === -1) $state.go('root.document', {id: document._id});
     else $state.go('root.main', {id: document._id});
@@ -41,10 +45,10 @@ angular.module('cendra')
     return vm.selected;
   };
 
-  vm.info = function($event, document) {
-    $event.stopPropagation();
+  vm.select = function($event, document) {
+    $event && $event.stopPropagation();
     vm.selected = document;
-    $rootScope.$broadcast('cd:info', document);
+    $rootScope.$broadcast('cd:selected', document);
   };
 }]);
 

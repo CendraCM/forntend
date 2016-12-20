@@ -8,47 +8,66 @@ angular.module('cendra')
   $rootScope.$broadcast('cd:info');
 
   vm.schema = {};
-
-  if($stateParams.id) {
-    io.emit('get:schema', $stateParams.id, function(err, doc) {
-      if(err) return $mdToast.showSimple(err);
-      vm.schema = doc;
-    });
-  } else {
-    var prompt = $mdDialog.prompt()
-      .title("Título del Tipo Documental")
-      .placeholder("Título")
-      .initialValue("Sin Título")
-      .ok("Aceptar")
-      .cancel("Calcelar");
-    $mdDialog.show(prompt)
-      .then(function(name) {
-        vm.schema.objName = name;
-      })
-      .catch(function(){
-        $window.history.back();
+  $q.all([
+    $q(function(resolve, reject) {
+      io.emit('list:schema', function(err, interfaces) {
+        vm.interfaces = interfaces;
+        resolve();
       });
-    io.emit('get:personalGroup', function(error, groups) {
-      vm.schema.objSecurity = vm.schema.objSecurity||{};
-      vm.schema.objSecurity.owner = vm.schema.objSecurity.owner||[];
-      groups.forEach(function(group) {
-        if(!vm.schema.objSecurity.owner.includes(group._id)) {
-          vm.schema.objSecurity.owner.push(group._id);
-        }
+    }),
+    $q(function(resolve, reject) {
+      io.emit('list:schema:imp', function(err, interfaces) {
+        vm.implementable = interfaces;
+        resolve();
       });
-    });
-  }
-
-  io.emit('list:schema', function(err, interfaces) {
-    vm.interfaces = interfaces;
+    })
+  ])
+  .then(function() {
+    if($stateParams.id) {
+      io.emit('get:schema', $stateParams.id, function(err, doc) {
+        if(err) return $mdToast.showSimple(err);
+        vm.schema = doc;
+      });
+    } else {
+      var prompt = $mdDialog.prompt()
+        .title("Título del Tipo Documental")
+        .placeholder("Título")
+        .initialValue("Sin Título")
+        .ok("Aceptar")
+        .cancel("Calcelar");
+      $mdDialog.show(prompt)
+        .then(function(name) {
+          vm.schema.objName = name;
+        })
+        .catch(function(){
+          $window.history.back();
+        });
+      io.emit('get:personalGroup', function(error, groups) {
+        vm.schema.objSecurity = vm.schema.objSecurity||{};
+        vm.schema.objSecurity.owner = vm.schema.objSecurity.owner||[];
+        groups.forEach(function(group) {
+          if(!vm.schema.objSecurity.owner.includes(group._id)) {
+            vm.schema.objSecurity.owner.push(group._id);
+          }
+        });
+      });
+    }
   });
 
   vm.done = function(canceled) {
     if(!canceled) {
       if(vm.schema._id) {
-        io.emit('update:schema', vm.schema._id, vm.schema, function(err, doc) {
-          if(err) return $mdToast.showSimple(err);
-          //$scope.$emit('cd:addToFolder', doc);
+        $q(function(resolve, reject) {
+          io.emit('unlock:document', vm.schema._id, function(err, doc) {
+            if(err) return reject(err);
+            resolve();
+          });
+        })
+        .then(function() {
+          io.emit('update:schema', vm.schema._id, vm.schema, function(err, doc) {
+            if(err) return $mdToast.showSimple(err);
+            //$scope.$emit('cd:addToFolder', doc);
+          });
         });
       } else {
         io.emit('insert:schema', vm.schema, function(err, doc) {

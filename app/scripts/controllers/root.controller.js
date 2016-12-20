@@ -75,11 +75,14 @@ angular.module('cendra')
     io.emit('add:folder:link', vm.selectedItem, doc._id);
   });
 
+  $scope.$on('cd:toggleInfo', function($event) {
+    vm.openInfo = !vm.openInfo;
+  });
 
-  $scope.$on('cd:info', function($event, doc) {
+
+
+  $scope.$on('cd:selected', function($event, doc) {
     $scope.selectedInfoDoc = doc;
-    if(doc) $q.resolve($mdSidenav('info', true)).then(function(instance) { instance.open(); });
-    else $q.resolve($mdSidenav('info', true)).then(function(instance) { instance.close(); });
   });
 
   vm.expand = function(item, cb) {
@@ -97,7 +100,8 @@ angular.module('cendra')
     if(item) $state.go('root.main', {id: item._id});
   };
 
-  vm.createFolder = function(){
+  //vm.createFolder = function(){
+  $scope.$on('cd:createFolder', function($event) {
     var prompt = $mdDialog.prompt()
       .title("Nueva Carpeta")
       .ok("Crear")
@@ -141,7 +145,7 @@ angular.module('cendra')
     .catch(function(err) {
       $mdToast.showSimple(err);
     });
-  };
+  });
 }]);
 
 })();

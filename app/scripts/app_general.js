@@ -6,5 +6,14 @@
     io.on('userName:set', function(name) {
       $scope.name = name;
     });
+
+    $scope.toggleInfo = function() {
+      $scope.$broadcast('cd:toggleInfo');
+    };
+
+    $scope.createFolder = function() {
+      $scope.$broadcast('cd:createFolder');
+    };
+
   }]);
 })();

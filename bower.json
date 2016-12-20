@@ -18,7 +18,8 @@
     "angular-ui-router": "ui-router#^0.2.18",
     "angular-resource": "^1.5.0",
     "doc-builder": "https://github.com/CendraCM/doc-builder.git",
-    "angular-formly-material": "^0.14.3"
+    "angular-formly-material": "^0.14.3",
+    "fast-json-patch": "^1.1.3"
   },
   "resolutions": {
     "angular": "^1.4.8",

@@ -28,6 +28,38 @@
           <div class="md-subhead">{{name|uppercase}}</div>
         </div>
       </div>
+      <md-menu-bar md-colors="{backgroundColor: 'primary-400'}" layout="row">
+        <md-menu>
+          <button style="color: white" ng-click="$mdOpenMenu($event)">
+            Nuevo
+          </button>
+          <md-menu-content>
+            <md-menu-item>
+              <md-button ui-sref="root.document">
+                <md-icon>note_add</md-icon>
+                Documento
+              </md-button>
+            </md-menu-item>
+            <md-menu-item>
+              <md-button ng-click="createFolder()">
+                <md-icon>create_new_folder</md-icon>
+                Carpeta
+              </md-button>
+            </md-menu-item>
+            <md-menu-divider></md-menu-divider>
+            <md-menu-item ui-sref="root.schema">
+              <md-button>
+                <md-icon>library_add</md-icon>
+                Tipo Documental
+              </md-button>
+            </md-menu-item>
+          </md-menu-content>
+        </md-menu>
+        <span flex></span>
+        <md-button class="md-icon-button" ng-click="toggleInfo()">
+          <md-icon md-font-set="material-icons">info</md-icon>
+        </md-button>
+      </md-menu-bar>
     </md-toolbar>
     <ui-view layout="column" flex></ui-view>
 
@@ -46,6 +78,7 @@
     <script src="/bower_components/api-check/dist/api-check.js"></script>
     <script src="/bower_components/angular-formly/dist/formly.js"></script>
     <script src="/bower_components/angular-formly-material/dist/formly-material.js"></script>
+    <script src="/bower_components/fast-json-patch/src/json-patch-duplex.js"></script>
     <!-- endbower -->
 
     <!-- inject:js -->

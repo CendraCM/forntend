@@ -47,9 +47,25 @@ if(config.project.fe) {
       .pipe(gulp.dest(path.dirname(config.project.fe.index)));
   });
 
-  gulp.task('bower', function bowerTask() {
+  gulp.task('bower', ['inject'], function bowerTask() {
+    debugger;
     return temp()
-      .pipe(wiredep({ignorePath: '..', onError: function(err) { console.log(err); }}))
+      .pipe(wiredep({
+        ignorePath: '..',
+        onError: function(err) {
+          console.log(err);
+        },
+        onPathInjected: function(fileObject) {
+          console.log('found '+fileObject.path);
+          // fileObject.block = 'type-of-wiredep-block' ('js', 'css', etc)
+          // fileObject.file = 'name-of-file-that-was-updated'
+          // fileObject.path = 'path-to-file-that-was-injected'
+        },
+        onMainNotFound: function(pkg) {
+          console.log('not found '+pkg);
+          // pkg = 'name-of-bower-package-without-main'
+        }
+      }))
       .pipe(gulp.dest(path.dirname(config.project.fe.index)));
   });
 
@@ -212,7 +228,7 @@ gulp.task('inspect', ['docker:debug', 'watch'], function serveTask() {
 
 });
 
-gulp.task('watch', ['bower', 'inject'], function(){
+gulp.task('watch', ['bower'], function(){
   var bkfiles = (config.project.bk.js||[]).concat(['/etc/nodejs-config/'+package.name+'.json']);
   gulp.watch(bkfiles, ['docker:restart']);
   if(config.project.fe) {

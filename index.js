@@ -472,6 +472,43 @@ io.on('connection', function(socket) {
     bkRequest(options, cb);
   });
 
+  socket.on('patch:document', function(id, patches, cb) {
+    if(!isLoggedIn()) return unauthAccess();
+    var options = {
+      url: '/'+id,
+      json: patches,
+      method: 'PATCH',
+      headers: {
+        authorization: 'Bearer '+tokenSet.access_token
+      }
+    };
+    bkRequest(options, cb);
+  });
+
+  socket.on('lock:document', function(id, cb) {
+    if(!isLoggedIn()) return unauthAccess();
+    var options = {
+      url: '/'+id+'/lock',
+      method: 'PUT',
+      headers: {
+        authorization: 'Bearer '+tokenSet.access_token
+      }
+    };
+    bkRequest(options, cb);
+  });
+
+  socket.on('unlock:document', function(id, cb) {
+    if(!isLoggedIn()) return unauthAccess();
+    var options = {
+      url: '/'+id+'/lock',
+      method: 'DELETE',
+      headers: {
+        authorization: 'Bearer '+tokenSet.access_token
+      }
+    };
+    bkRequest(options, cb);
+  });
+
   socket.on('delete:document', function(id, cb) {
     if(!isLoggedIn()) return unauthAccess();
     var options = {
@@ -735,6 +772,30 @@ io.on('connection', function(socket) {
     .nodeify(cb);
   });
 
+
+  socket.on('lock:schema', function(id, cb) {
+    if(!isLoggedIn()) return unauthAccess();
+    var options = {
+      url: '/schema/'+id+'/lock',
+      method: 'PUT',
+      headers: {
+        authorization: 'Bearer '+tokenSet.access_token
+      }
+    };
+    bkRequest(options, cb);
+  });
+
+  socket.on('unlock:schema', function(id, cb) {
+    if(!isLoggedIn()) return unauthAccess();
+    var options = {
+      url: '/schema/'+id+'/lock',
+      method: 'DELETE',
+      headers: {
+        authorization: 'Bearer '+tokenSet.access_token
+      }
+    };
+    bkRequest(options, cb);
+  });
 
   socket.on('get:schema', function(id, cb) {
     if(!isLoggedIn()) return unauthAccess();

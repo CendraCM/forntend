@@ -46,3 +46,7 @@ cd-tree .cd-button:hover {
   background-color: #ccc;
   margin-right: 8px;
 }
+
+md-sidenav {
+  transition: 0.2s all
+}
