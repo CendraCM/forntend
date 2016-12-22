@@ -166,6 +166,7 @@ app.use(parser.json());
 app.use(parser.urlencoded({extended: true}));
 app.use('/bower_components', express.static(path.join(__dirname, 'bower_components')));
 app.use('/scripts', express.static(path.join(__dirname, 'app/scripts')));
+app.use('/css', express.static(path.join(__dirname, 'app/css')));
 app.use('/views', express.static(path.join(__dirname, 'app/views')));
 app.get('/oidc/callback', function(req, res, next) {
   Promise.all([
@@ -544,6 +545,23 @@ io.on('connection', function(socket) {
     if(!isLoggedIn()) return unauthAccess();
     schema.get(req, 'FolderInterface')
     .first()
+    .then(function(previousResult) {
+      if(userObj.user.rootFolder) return previousResult;
+      var options = {
+        url: '/'+userObj._id,
+        method: 'GET'
+      };
+      return bkRequest(options)
+      .then(function(user) {
+        if(user) {
+          req.session.user = user;
+          req.session.save();
+          isLoggedIn();
+          socket.emit('rootFolder:set', user.user.rootFolder);
+        }
+        return previousResult;
+      });
+    })
     .then(function(fi) {
       var options = {
         url: '/',
@@ -591,6 +609,23 @@ io.on('connection', function(socket) {
         .then(function(subFolders) {
           instance.folder.objLinks = subFolders;
           return instance;
+        });
+      })
+      .then(function(previousResult) {
+        if(userObj.user.rootFolder) return previousResult;
+        var options = {
+          url: '/'+userObj._id,
+          method: 'GET'
+        };
+        return bkRequest(options)
+        .then(function(user) {
+          if(user) {
+            req.session.user = user;
+            req.session.save();
+            isLoggedIn();
+            socket.emit('rootFolder:set', user.user.rootFolder);
+          }
+          return previousResult;
         });
       })
       .then(function(instance) {
@@ -722,7 +757,7 @@ io.on('connection', function(socket) {
       bkRequest(options)
       .then(function(instance) {
         return new Promise(function(resolve, reject) {
-          if(!instance.folder.objLinks||!instance.folder.objLinks.length) {
+          if(!instance.folder||!instance.folder.objLinks||!instance.folder.objLinks.length) {
             return resolve([]);
           }
           var options = {

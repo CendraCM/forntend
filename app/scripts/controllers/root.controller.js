@@ -21,7 +21,13 @@ angular.module('cendra')
 
   getFolders();
 
-  $scope.$on('$locationChangeSuccess', getFolders);
+  $scope.$on('$locationChangeSuccess', function() {
+    if(vm.selectedItem) {
+      if($location.path() == '/') vm.select(vm.selectedItem);
+    } else {
+      getFolders();
+    }
+  });
 
 
   var findFolder = function(folders, elem, replace) {
@@ -55,8 +61,10 @@ angular.module('cendra')
       if(!vm.folders.length) {
         io.emit('get:folder', function(error, folders) {
           vm.folders = folders;
-          var replaced = findFolder(vm.folders, instance, true);
-          if(!replaced) vm.folders.push(instance);
+          vm.selectedItem = findFolder(vm.folders, id);
+          //  vm.selectedItem = folders[0];
+          //var replaced = findFolder(vm.folders, instance, true);
+          //if(!replaced) vm.folders.push(instance);
         });
       } else {
         vm.folders.push(instance);
@@ -112,7 +120,7 @@ angular.module('cendra')
         $q(function(resolve, reject) {
           io.emit('get:schema:named', 'FolderInterface', function(err, iface) {
             if(err) return reject(err);
-            resolve({objName: folderName, objInterface: [iface._id]});
+            resolve({objName: folderName, objInterface: [iface._id], folder: {objLinks: []}});
           });
         })
         .then(function(nd) {

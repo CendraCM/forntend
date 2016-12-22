@@ -22,7 +22,7 @@ angular.module('cendra')
       io.emit('get:folder:contents', $stateParams.id, function(error, contents) {
         vm.documents = [];
         vm.folders = [];
-        contents.forEach(function(content) {
+        (contents||[]).forEach(function(content) {
           if(!content.objInterface||content.objInterface.indexOf(vm.fiID) === -1) {
             vm.documents.push(content);
           } else {
