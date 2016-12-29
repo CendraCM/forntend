@@ -79,7 +79,19 @@
     <script src="/bower_components/api-check/dist/api-check.js"></script>
     <script src="/bower_components/angular-formly/dist/formly.js"></script>
     <script src="/bower_components/angular-formly-material/dist/formly-material.js"></script>
+    <script src="/bower_components/moment/moment.js"></script>
     <!-- endbower -->
+
+    <script src="/bower_components/moment/min/locales.js"></script>
+    <script>
+      for(var i = 0; i < navigator.languages.length; i++) {
+        moment.locale(navigator.languages[i]);
+        if(moment.locale() == navigator.languages[i]) {
+          break;
+        }
+      }
+
+    </script>
 
     <!-- inject:js -->
     <script src="/scripts/plugins/BinaryInterface/binary.plugin.js"></script>

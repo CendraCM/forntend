@@ -536,6 +536,18 @@ io.on('connection', function(socket) {
     bkRequest(options, cb);
   });
 
+  socket.on('get:document:info', function(id, cb) {
+    var options = {
+      url: '/'+id+'/version',
+      method: 'GET'
+    };
+    return bkRequest(options)
+    .then(function(versions) {
+      return {versions: versions.reverse()};
+    })
+    .nodeify(cb);
+  });
+
   socket.on('get:userName', function(cb) {
     if(!isLoggedIn()) return unauthAccess();
     socket.emit('userName:set', profile.name);

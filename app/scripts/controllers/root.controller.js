@@ -91,6 +91,12 @@ angular.module('cendra')
 
   $scope.$on('cd:selected', function($event, doc) {
     $scope.selectedInfoDoc = doc;
+    io.emit('get:document:info', doc._id, function(err, info) {
+      info.versions.forEach(function(i) {
+        i.formattedDate = moment(i.time / 1000, 'X').format('L LT');
+      });
+      $scope.selectedInfo = info;
+    });
   });
 
   vm.expand = function(item, cb) {

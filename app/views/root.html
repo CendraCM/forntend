@@ -10,7 +10,21 @@
     <md-content layout="column" layout-padding>
       <h4>{{selectedInfoDoc.objName}}</h4>
       <md-divider></md-divider>
-      {{selectedInfoDoc.objDescription}}
+      <div>{{selectedInfoDoc.objDescription}}</div>
+      <md-tabs>
+        <md-tab label="Detalles">
+          <md-list>
+            <md-list-item>Propietario: {{selectedInfo.owner}} {{selectedInfo.versions.length}}</md-list-item>
+            <md-list-item>Creado: {{selectedInfo.versions[selectedInfo.versions.length - 1].formattedDate}} - {{selectedInfo.versions[selectedInfo.versions.length - 1].user}}</md-list-item>
+            <md-list-item ng-if="selectedInfo.versions.length > 1">Modificado: {{selectedInfo.versions[0].formattedDate}} - {{selectedInfo.versions[0].user}}</md-list-item>
+          </md-list>
+        </md-tab>
+        <md-tab label="Historia">
+          <md-list>
+            <md-list-item ng-repeat="version in selectedInfo.versions">{{version.type}} {{version.formattedDate}} - {{version.user}}</md-list-item>
+          </md-list>
+        </md-tab>
+      </md-tabs>
     </md-content>
   </md-sidenav>
 </md-content>
