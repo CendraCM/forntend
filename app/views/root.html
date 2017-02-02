@@ -2,26 +2,59 @@
   <md-sidenav md-component-id="menu" class="md-sidenav-left md-whiteframe-z2" md-is-locked-open="true">
     <md-content layout="column">
       <cd-tree ng-model="vm.folders" label-key="objName" child-key="subFolders" select="vm.select(item)" selected-item="vm.selectedItem" expand="vm.expand(item)"></cd-tree>
+      <div layout="row" layout-align="center center" ng-click="vm.listTypes($event)" ng-class="{selected: vm.selectedItem == 'types'}" class="cd-button">
+        <div class="space"></div>
+        <md-icon class="folder">library_add</md-icon>
+        <div class="md-list-item-text" flex>Tipos Documentales</div>
+      </div>
     </md-content>
   </md-sidenav>
   <md-content ui-view flex layout-padding layout="column">
   </md-content>
   <md-sidenav md-component-id="info" class="md-sidenav-right md-whiteframe-z2" md-is-locked-open="vm.openInfo" md-disable-backdrop="true">
     <md-content layout="column" layout-padding>
-      <h4>{{selectedInfoDoc.objName}}</h4>
+      <h4>{{vm.selectedInfoDoc.objName}}</h4>
       <md-divider></md-divider>
-      <div>{{selectedInfoDoc.objDescription}}</div>
-      <md-tabs>
+      <div>{{vm.selectedInfoDoc.objDescription}}</div>
+      <md-tabs md-dynamic-height="true" md-stretch-tabs="always">
         <md-tab label="Detalles">
-          <md-list>
-            <md-list-item>Propietario: {{selectedInfo.owner}} {{selectedInfo.versions.length}}</md-list-item>
-            <md-list-item>Creado: {{selectedInfo.versions[selectedInfo.versions.length - 1].formattedDate}} - {{selectedInfo.versions[selectedInfo.versions.length - 1].user}}</md-list-item>
-            <md-list-item ng-if="selectedInfo.versions.length > 1">Modificado: {{selectedInfo.versions[0].formattedDate}} - {{selectedInfo.versions[0].user}}</md-list-item>
+          <md-list class="md-body-1">
+            <md-list-item ng-if="vm.selectedInfoOwners" layout="row">
+              <span flex="40">Propietario</span>
+              <span flex="60">{{vm.selectedInfoOwners}}<span>
+            </md-list-item>
+            <md-list-item layout="row">
+              <span flex="40">Tipo</span>
+              <span flex="60">{{vm.selectedInfoTypes}}</span>
+            </md-list-item>
+            <md-list-item ng-if="vm.selectedInfo" layout="row">
+              <span flex="40">Versión</span>
+              <span flex="60">{{vm.selectedInfo.versions.length}}</span>
+            </md-list-item>
+            <md-list-item ng-if="vm.selectedInfo" layout="row">
+              <span flex="40">Creado</span>
+              <span flex="60">{{vm.selectedInfo.versions[vm.selectedInfo.versions.length - 1].formattedDate}} - {{vm.selectedInfo.versions[vm.selectedInfo.versions.length - 1].user}}<span>
+            </md-list-item>
+            <md-list-item ng-if="vm.selectedInfo &amp;&amp; vm.selectedInfo.versions.length > 1" layout="row">
+              <span flex="40">Modificado</span>
+              <span flex="60">{{vm.selectedInfo.versions[0].formattedDate}} - {{vm.selectedInfo.versions[0].user}}</span>
+            </md-list-item>
           </md-list>
         </md-tab>
         <md-tab label="Historia">
           <md-list>
-            <md-list-item ng-repeat="version in selectedInfo.versions">{{version.type}} {{version.formattedDate}} - {{version.user}}</md-list-item>
+            <md-list-item ng-repeat="version in vm.selectedInfo.versions">
+              <md-card flex>
+                <md-card-header>
+                  <md-card-header-text>
+                    <span class="md-subhead">{{vm.actionText(version.type)}} <strong>{{version.user}}</strong></span>
+                  </md-card-header-text>
+                </md-card-header>
+                <md-card-content class="md-body-1">
+                  {{version.formattedDate}}
+                </md-card-content>
+              </md-card>
+            </md-list-item>
           </md-list>
         </md-tab>
       </md-tabs>

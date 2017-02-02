@@ -83,19 +83,64 @@ angular.module('cendra')
     io.emit('add:folder:link', vm.selectedItem, doc._id);
   });
 
+  vm.openInfo = true;
+
   $scope.$on('cd:toggleInfo', function($event) {
     vm.openInfo = !vm.openInfo;
   });
 
+  vm.listTypes = function($event) {
+    $event.stopPropagation();
+    vm.selectedItem = 'types';
+    $state.go('root.schemas');
+  };
 
+  vm.actionText = function(action) {
+    switch (action) {
+      case 'create':
+        return 'Creado por';
+      case 'modify':
+        return 'Modificado por';
+      case 'delete':
+        return 'Eliminado por';
+    }
+  };
 
   $scope.$on('cd:selected', function($event, doc) {
-    $scope.selectedInfoDoc = doc;
+    vm.selectedInfoDoc = doc;
+    vm.selectedInfoOwners = null;
+    if(doc.objSecurity && doc.objSecurity.owner && doc.objSecurity.owner.length) {
+      io.emit('list:document', {_id: {$in: doc.objSecurity.owner}}, function(err, docs) {
+        if(err) return;
+        vm.selectedInfoOwners = docs.map(function(doc) {
+          return doc.objName;
+        }).join(', ');
+      });
+    }
+    vm.selectedInfoTypes = 'Documento Base';
+    if(doc.objInterface && doc.objInterface.length) {
+      io.emit('list:schema', {_id: {$in: doc.objInterface}}, function(err, docs) {
+        if(err) return;
+        vm.selectedInfoTypes = docs.map(function(doc) {
+          return doc.objName;
+        }).join(', ');
+      });
+    }
+
+    vm.selectedInfo = null;
     io.emit('get:document:info', doc._id, function(err, info) {
+      if(!info) return;
       info.versions.forEach(function(i) {
         i.formattedDate = moment(i.time / 1000, 'X').format('L LT');
+        switch(i.user.type) {
+          case 'user':
+            i.user = i.user.name+(i.user.root?' (root)':'');
+            break;
+          default:
+            i.user = i.user.type;
+        }
       });
-      $scope.selectedInfo = info;
+      vm.selectedInfo = info;
     });
   });
 

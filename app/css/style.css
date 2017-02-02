@@ -6,27 +6,27 @@
   margin-left: 8px !important;
 }*/
 
-cd-tree .space   {
+.space   {
   width: 24px;
 }
 
 
-cd-tree .cd-button {
+.cd-button {
   margin: 0px;
   min-height: 48px;
   position: relative;
   outline: none;
 }
 
-cd-tree .cd-button.selected {
+.cd-button.selected {
   font-weight: bolder;
 }
 
-cd-tree .cd-button.selected > .folder {
+.cd-button.selected > .folder {
   color: rgb(63,81,181);
 }
 
-cd-tree .cd-button:hover {
+.cd-button:hover {
   background-color: rgba(158,158,158,0.2);
 }
 

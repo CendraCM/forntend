@@ -48,6 +48,15 @@ angular.module('cendra')
   vm.select = function($event, document) {
     $event && $event.stopPropagation();
     vm.selected = document;
+    if(document == vm.currentFolder) {
+      $rootScope.$broadcast('cd:setTools', []);
+    } else {
+      $rootScope.$broadcast('cd:setTools', [{
+        event: 'delete',
+        icon: 'delete',
+        label: 'Borrar'
+      }]);
+    }
     $rootScope.$broadcast('cd:selected', document);
   };
 }]);

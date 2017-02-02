@@ -26,7 +26,7 @@ angular.module('cendra')
     if($stateParams.id) {
       io.emit('get:schema', $stateParams.id, function(err, doc) {
         if(err) return $mdToast.showSimple(err);
-        vm.schema = doc;
+        if(doc) vm.schema = doc;
       });
     } else {
       var prompt = $mdDialog.prompt()

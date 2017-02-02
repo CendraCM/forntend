@@ -56,7 +56,12 @@
           </md-menu-content>
         </md-menu>
         <span flex></span>
+        <md-button class="md-icon-button" ng-repeat="tool in tools" ng-click="fireTool(tool.event)" aria-label="{{tool.label}}">
+          <md-tooltip>{{tool.label}}</md-tooltip>
+          <md-icon md-font-set="material-icons">{{tool.icon}}</md-icon>
+        </md-button>
         <md-button class="md-icon-button" ng-click="toggleInfo()">
+          <md-tooltip>Detalles</md-tooltip>
           <md-icon md-font-set="material-icons">info</md-icon>
         </md-button>
       </md-menu-bar>
@@ -96,6 +101,7 @@
     <!-- inject:js -->
     <script src="/scripts/plugins/BinaryInterface/binary.plugin.js"></script>
     <script src="/scripts/app.js"></script>
+    <script src="/scripts/controllers/types.controller.js"></script>
     <script src="/scripts/controllers/type.controller.js"></script>
     <script src="/scripts/controllers/root.controller.js"></script>
     <script src="/scripts/controllers/notUser.controller.js"></script>

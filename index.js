@@ -848,7 +848,6 @@ io.on('connection', function(socket) {
     if(!isLoggedIn()) return unauthAccess();
     schema.id(id)
     .get(req)
-    .listable()
     .nodeify(cb);
   });
 

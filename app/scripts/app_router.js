@@ -15,6 +15,12 @@
       controller: 'RootController',
       controllerAs: 'vm'
     })
+    .state('root.schemas', {
+      url: '/types',
+      templateUrl: 'views/types.html',
+      controller: 'TypesController',
+      controllerAs: 'vm'
+    })
     .state('root.main', {
       url: '/:id',
       templateUrl: 'views/main.html',
