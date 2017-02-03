@@ -24,36 +24,42 @@ angular.module('cendra')
     })
   ])
   .then(function() {
-    if($stateParams.id) {
-      io.emit('get:document', $stateParams.id, function(err, doc) {
-        if(err) return $mdToast.showSimple(err);
-        vm.document = doc;
-      });
-    } else {
-      var prompt = $mdDialog.prompt()
-        .title("Título del Documento")
-        .placeholder("Título")
-        .initialValue("Sin Título")
-        .ok("Aceptar")
-        .cancel("Calcelar");
-      $mdDialog.show(prompt)
-        .then(function(name) {
-          vm.document.objName = name;
-        })
-        .catch(function(){
-          $window.history.back();
+    return $q(function(resolve, reject) {
+      if($stateParams.id) {
+        io.emit('get:document', $stateParams.id, function(err, doc) {
+          if(err) return $mdToast.showSimple(err);
+          vm.document = doc;
+          resolve();
         });
-      io.emit('get:personalGroup', function(error, groups) {
-        vm.document.objSecurity = vm.document.objSecurity||{};
-        vm.document.objSecurity.owner = vm.document.objSecurity.owner||[];
-        groups.forEach(function(group) {
-          if(!vm.document.objSecurity.owner.includes(group._id)) {
-            vm.document.objSecurity.owner.push(group._id);
-          }
+      } else {
+        var prompt = $mdDialog.prompt()
+          .title("Título del Documento")
+          .placeholder("Título")
+          .initialValue("Sin Título")
+          .ok("Aceptar")
+          .cancel("Calcelar");
+        $mdDialog.show(prompt)
+          .then(function(name) {
+            vm.document.objName = name;
+          })
+          .catch(function(){
+            $window.history.back();
+          });
+        io.emit('get:personalGroup', function(error, groups) {
+          vm.document.objSecurity = vm.document.objSecurity||{};
+          vm.document.objSecurity.owner = vm.document.objSecurity.owner||[];
+          groups.forEach(function(group) {
+            if(!vm.document.objSecurity.owner.includes(group._id)) {
+              vm.document.objSecurity.owner.push(group._id);
+            }
+          });
+          resolve();
         });
-      });
-    }
-    if(jsonpatch) observer = jsonpatch.observe(vm.document);
+      }
+    })
+    .then(function() {
+      if(jsonpatch) observer = jsonpatch.observe(vm.document);
+    });
   });
 
   vm.done = function(canceled, doc, patches) {
