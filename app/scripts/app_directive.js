@@ -27,13 +27,13 @@
         level: '@?'
       },
       template: template,
-      compile: function() {
+      /*compile: function() {
         return {
           pre: function(scope) {
             console.log('compila cdTree');
           }
         };
-      },
+      },*/
       controller: ['$scope', 'io', function($scope, io) {
         $scope.spaces = [];
         $scope.level = parseInt($scope.level||0);

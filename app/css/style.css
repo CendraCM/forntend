@@ -16,6 +16,7 @@
   min-height: 48px;
   position: relative;
   outline: none;
+  cursor: pointer;
 }
 
 .cd-button.selected {
