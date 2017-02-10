@@ -805,7 +805,12 @@ io.on('connection', function(socket) {
       cb = filter;
       filter = {};
     }
-    schema.get(req, filter)
+
+    bkRequest({
+      qs: filter,
+      url: '/schema',
+      method: 'GET'
+    })
     .nodeify(cb);
   });
 
@@ -815,7 +820,11 @@ io.on('connection', function(socket) {
       cb = filter;
       filter = {};
     }
-    schema.imp().get(req, filter)
+    bkRequest({
+      qs: filter,
+      url: '/schema/implementable',
+      method: 'GET'
+    })
     .nodeify(cb);
   });
 
@@ -846,14 +855,20 @@ io.on('connection', function(socket) {
 
   socket.on('get:schema', function(id, cb) {
     if(!isLoggedIn()) return unauthAccess();
-    schema.id(id)
-    .get(req)
+    bkRequest({
+      url: '/schema/'+id,
+      method: 'GET'
+    })
     .nodeify(cb);
   });
 
   socket.on('get:schema:named', function(name, cb) {
     if(!isLoggedIn()) return unauthAccess();
-    schema.get(req, name)
+    bkRequest({
+      qs: {objName: name},
+      url: '/schema',
+      method: 'GET'
+    })
     .nodeify(cb);
   });
 

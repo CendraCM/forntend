@@ -2,7 +2,7 @@
 'use strict';
 
 angular.module('cendra')
-.controller('TypeController', function($scope, $rootScope, io, $state, $stateParams, $q, $mdToast, $mdDialog, $window) {
+.controller('TypeController', function($scope, $rootScope, io, $state, $stateParams, $q, $mdToast, $mdDialog, locationHistory) {
   var vm = this;
 
   $rootScope.$broadcast('cd:info');
@@ -40,7 +40,7 @@ angular.module('cendra')
           vm.schema.objName = name;
         })
         .catch(function(){
-          $window.history.back();
+          locationHistory.back('root.main');
         });
       io.emit('get:personalGroup', function(error, groups) {
         vm.schema.objSecurity = vm.schema.objSecurity||{};
@@ -76,7 +76,7 @@ angular.module('cendra')
         });
       }
     } else {
-      $state.go('root.main');
+      locationHistory.back('root.main');
     }
   };
 

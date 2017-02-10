@@ -20,9 +20,14 @@ angular.module('cendra')
   };
 
   getFolders();
+  if($location.path() == '/types') {
+    vm.selectedItem = 'types';
+  }
 
   $scope.$on('$locationChangeSuccess', function() {
-    if(vm.selectedItem) {
+    if($location.path() == '/types') {
+      vm.selectedItem = 'types';
+    } else if(vm.selectedItem) {
       if($location.path() == '/') vm.select(vm.selectedItem);
     } else {
       getFolders();

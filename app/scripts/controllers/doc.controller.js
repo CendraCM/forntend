@@ -7,6 +7,7 @@ angular.module('cendra')
   var observer;
 
   $rootScope.$broadcast('cd:info');
+  $rootScope.$broadcast('cd:setTools', []);
 
   vm.document = {};
   $q.all([

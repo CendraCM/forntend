@@ -58,5 +58,17 @@
         return userVar;
       }
     };
+  }])
+  .factory('locationHistory', ['$rootScope', '$location', '$state', function($rootScope, $location, $state) {
+    var history = [$location.path()];
+    $rootScope.$on('$locationChangeSuccess', function() {
+      history.push($location.path());
+    });
+    return {
+      back: function(state) {
+        if(history.length > 1) return $location.path(history.splice(-2)[0]);
+        return $state.go(state);
+      }
+    };
   }]);
 })();

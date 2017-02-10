@@ -2,7 +2,7 @@
 'use strict';
 
   angular.module('cendra')
-  .controller('GeneralController', ['io', '$scope', function(io, $scope) {
+  .controller('GeneralController', ['io', '$scope', 'locationHistory', function(io, $scope, locationHistory) {
     $scope.tools = [];
 
     io.on('userName:set', function(name) {

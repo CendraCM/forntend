@@ -2,7 +2,7 @@
 'use strict';
 
 angular.module('cendra')
-.controller('MainController', ['io', '$state', '$stateParams', '$rootScope', function(io, $state, $stateParams, $rootScope) {
+.controller('MainController', ['io', '$state', '$stateParams', '$rootScope', '$scope', function(io, $state, $stateParams, $rootScope, $scope) {
   var vm = this;
   vm.documents = vm.documents||[];
   vm.folders = vm.folders||[];
@@ -45,17 +45,28 @@ angular.module('cendra')
     return vm.selected;
   };
 
+  $scope.$on('cd:fireTool:edit', function() {
+    $state.go('root.document', {id: vm.selected._id});
+  });
+
   vm.select = function($event, document) {
     $event && $event.stopPropagation();
     vm.selected = document;
     if(document == vm.currentFolder) {
       $rootScope.$broadcast('cd:setTools', []);
     } else {
-      $rootScope.$broadcast('cd:setTools', [{
+      $rootScope.$broadcast('cd:setTools', [
+        {
         event: 'delete',
         icon: 'delete',
         label: 'Borrar'
-      }]);
+      },
+      {
+        event: 'edit',
+        icon: 'edit',
+        label: 'Editar'
+      }
+      ]);
     }
     $rootScope.$broadcast('cd:selected', document);
   };
